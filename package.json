@@ -1,0 +1,30 @@
+{
+  "name": "w4ll-e-renderer-app",
+  "version": "1.0.0",
+  "description": "Aplicação de renderização de vídeo com Electron.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "keywords": [
+    "ffmpeg",
+    "electron",
+    "video"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^29.1.5",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.you.walle",
+    "productName": "W4LL-E",
+    "mac": {
+      "category": "public.app-category.video",
+      "icon": "build/icon.icns",
+      "target": "dmg"
+    }
+  }
+}
