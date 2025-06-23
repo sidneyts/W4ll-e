@@ -1,6 +1,6 @@
 {
   "name": "w4ll-e-renderer-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Aplicação de renderização de vídeo com Electron.",
   "main": "main.js",
   "scripts": {
@@ -12,7 +12,7 @@
     "electron",
     "video"
   ],
-  "author": "",
+  "author": "SIDNEY",
   "license": "ISC",
   "devDependencies": {
     "electron": "^29.1.5",

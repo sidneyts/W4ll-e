@@ -1,4 +1,4 @@
-// Módulos Node.js e Electron
+// Módulos Node.js e Electron Apenas um show
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -218,13 +218,11 @@ async function processarArquivo(originalInputPath, outputDir, tempDir, terSource
     let tempImageVideoFiles = []; // Arquivos temporários criados a partir de imagens
 
     try {
-        // Mover o arquivo para a pasta temp
         await fsPromises.rename(originalInputPath, pathInTemp);
         sendLog(`Arquivo movido para temp: ${originalFileName}`, 'info');
 
-        let caminhoProcessado = pathInTemp; // Usar o novo caminho a partir de agora
+        let caminhoProcessado = pathInTemp;
         const allGeneratedFiles = [];
-
         if (/\.(jpg|jpeg|png)$/i.test(caminhoProcessado)) {
             sendLog(`Imagem detetada. Convertendo para vídeo...`, 'start-file');
             const tempVideoPath = path.join(outputDir, `${path.parse(caminhoProcessado).name}_temp_from_image.mp4`);
@@ -257,31 +255,47 @@ async function processarArquivo(originalInputPath, outputDir, tempDir, terSource
         allGeneratedFiles.push(...secundariosResults);
         sendProgress(originalInputPath, 75);
 
-        sendLog(`Aplicando barras...`, 'info');
-        const barPromises = allGeneratedFiles.map(async (fileInfo) => {
-            if (!fs.existsSync(fileInfo.path)) return;
+        sendLog(`Aplicando barras e cópias finais...`, 'info');
+        // Usar loop sequencial para evitar race conditions
+        for (const fileInfo of allGeneratedFiles) {
+            if (!fs.existsSync(fileInfo.path)) continue;
+            
             const { name, ext } = path.parse(fileInfo.path);
             const tempPathOriginal = fileInfo.path;
-            tempImageVideoFiles.push(tempPathOriginal); // Adiciona para limpeza posterior
+            
+            // 1. Criar cópia MUP primeiro
             if (name.endsWith('_VERTFULLHD')) {
                 const mupName = name.replace('_VERTFULLHD', '_*MUP') + ext;
                 const mupFinalPath = path.join(outputDir, mupName);
                 sendLog(`Criando cópia MUP: ${path.basename(mupFinalPath)}`, 'info');
-                fs.copyFileSync(tempPathOriginal, mupFinalPath);
+                try {
+                    fs.copyFileSync(tempPathOriginal, mupFinalPath);
+                } catch(copyError) {
+                     sendLog(`Erro ao criar cópia MUP para ${name}: ${copyError.message}`, 'error');
+                }
             }
+
+            // Adiciona arquivo intermediário à lista para apagar
+            tempImageVideoFiles.push(tempPathOriginal);
             
+            // 2. Aplicar barra ou renomear
             const barraPath = path.join(outputDir, `${name}_BAR.mp4`);
             const info = await getVideoInfo(tempPathOriginal);
+            
             if (fileInfo.applyBar && info && await aplicarBarra(tempPathOriginal, info.width, info.height, barraPath, encoderConfig)) {
                 sendLog(`Barra aplicada em: ${path.basename(barraPath)}`, 'done');
             } else {
                 sendLog(`Nenhuma barra necessária para: ${path.basename(tempPathOriginal)}`, 'info');
-                fs.renameSync(tempPathOriginal, barraPath);
-                const index = tempImageVideoFiles.indexOf(tempPathOriginal);
-                if (index > -1) tempImageVideoFiles.splice(index, 1);
+                try {
+                    fs.renameSync(tempPathOriginal, barraPath);
+                    // Se renomeou com sucesso, não precisa apagar depois
+                    const index = tempImageVideoFiles.indexOf(tempPathOriginal);
+                    if (index > -1) tempImageVideoFiles.splice(index, 1);
+                } catch (renameError) {
+                    sendLog(`Erro ao renomear ${name} para versão _BAR: ${renameError.message}`, 'error');
+                }
             }
-        });
-        await Promise.all(barPromises);
+        }
     } catch (erro) {
         sendLog(`Erro fatal ao processar ${originalFileName}: ${erro.message}`, 'error');
         throw erro;
