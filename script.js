@@ -1,3 +1,4 @@
+// FALA TESTE
 document.addEventListener('DOMContentLoaded', () => {
     const ipcRenderer = window.ipcRenderer;
     if (!ipcRenderer) {

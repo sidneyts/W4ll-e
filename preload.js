@@ -1,3 +1,4 @@
+// FALA TESTE
 const { contextBridge, ipcRenderer } = require('electron');
 
 /**
