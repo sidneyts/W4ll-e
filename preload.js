@@ -1,31 +1,27 @@
-// FALA TESTE
+// preload.js
 const { contextBridge, ipcRenderer } = require('electron');
 
-/**
- * A ponte de contexto (Context Bridge) expõe de forma segura APIs do backend (main.js)
- * para a interface (script.js), sem expor todo o objeto `ipcRenderer`.
- */
-contextBridge.exposeInMainWorld('ipcRenderer', {
-  /**
-   * Envia uma mensagem do processo de renderização para o processo principal.
-   * @param {string} channel - O canal da mensagem.
-   * @param {*} data - Os dados a serem enviados.
-   */
-  send: (channel, data) => ipcRenderer.send(channel, data),
+contextBridge.exposeInMainWorld('electronAPI', {
+  // Funções de controle da janela
+  closeWindow: () => ipcRenderer.send('window-close'),
+  minimizeWindow: () => ipcRenderer.send('window-minimize'),
+  maximizeWindow: () => ipcRenderer.send('window-maximize'),
+  getPlatform: () => process.platform, // Expõe a plataforma (win32, darwin, etc)
 
-  /**
-   * Ouve mensagens vindas do processo principal.
-   * @param {string} channel - O canal da mensagem a ser ouvido.
-   * @param {Function} func - A função de callback a ser executada quando uma mensagem for recebida.
-   */
-  on: (channel, func) => {
-    // Cria um listener que repassa os argumentos para a função de callback
-    const subscription = (event, ...args) => func(...args);
-    ipcRenderer.on(channel, subscription);
+  // Funções de arquivo e processamento
+  openFileDialog: () => ipcRenderer.send('open-file-dialog'),
+  startQueue: (data) => ipcRenderer.send('start-processing', data),
+  
+  // Funções de controle da fila
+  pauseQueue: () => ipcRenderer.send('queue-pause'),
+  resumeQueue: () => ipcRenderer.send('queue-resume'),
+  cancelQueue: () => ipcRenderer.send('queue-cancel'),
 
-    // Opcional: Retorna uma função para remover o listener, útil para limpeza em componentes React/Vue
-    return () => {
-      ipcRenderer.removeListener(channel, subscription);
-    };
-  }
+  // Handlers para receber dados do processo principal
+  handleFilesSelected: (callback) => ipcRenderer.on('files-selected', callback),
+  handleProgressUpdate: (callback) => ipcRenderer.on('progress-update', callback),
+  handleFinalLog: (callback) => ipcRenderer.on('final-log', callback),
+  handleProcessingStarted: (callback) => ipcRenderer.on('processing-started', callback),
+  handleProcessingCompleted: (callback) => ipcRenderer.on('processing-completed', callback),
+  handleProcessingCancelled: (callback) => ipcRenderer.on('processing-cancelled', callback),
 });

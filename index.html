@@ -1,148 +1,80 @@
-<!-- TESTES -->
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>W4ll-e</title>
-    <!-- Ligação para a folha de estilos externa -->
-    <link rel="stylesheet" href="style.css">
-    
-    <!-- Importação da Fonte Nunito do Google Fonts -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://cdn.tailwindcss.com">
+    <title>W4ll-E</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <!-- #################### TELA PRINCIPAL #################### -->
-    <div id="main-view" class="app-container">
-        <h1 class="main-title">Fila de Renderização</h1>
-        <header class="app-header">
-            <div class="secondary-actions">
-                <button class="btn btn-primary" id="add-files-btn">
-                    <i data-lucide="plus"></i> Adicionar Arquivos
-                </button>
-                <button class="btn" id="manual-rename-btn" title="Seleciona uma pasta para analisar e renomear todos os vídeos com base nos presets.">
-                    <i data-lucide="folder-pen"></i> Renomear Pasta
-                </button>
-                 <button class="btn" id="clear-queue-btn">
-                    <i data-lucide="trash-2"></i> Limpar Fila
-                </button>
-                <button class="btn" id="go-to-config-btn">
-                    <i data-lucide="settings"></i> Configurar
-                </button>
-            </div>
-             <div class="client-input-group">
-                <input type="text" id="client-name" placeholder="CLIENTE">
-                <label for="client-name">Nome do Cliente</label>
-            </div>
-        </header>
+<body class="overflow-hidden">
 
-        <main class="main-content">
-            <div class="queue-panel" id="queue-panel">
-                <ul class="queue-list" id="queue-list"></ul>
-                <div id="drop-overlay" class="drop-overlay">
-                    <p>Arraste e solte os arquivos aqui</p>
+    <!-- Container principal que terá a classe de retração -->
+    <div id="app-wrapper" class="w-full h-screen flex rounded-3xl">
+        
+        <!-- Sidebar (barra lateral) -->
+        <aside id="sidebar" class="sidebar flex-shrink-0 p-6 flex flex-col">
+            <!-- Botão para retrair/expandir a sidebar -->
+            <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" title="Alternar menu">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>
+            </button>
+
+            <!-- Conteúdo da Sidebar -->
+            <div class="sidebar-content flex flex-col h-full">
+                <div id="drop-zone" class="w-full flex-grow border-2 border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center text-center p-4 cursor-pointer hover:bg-white/5 transition-colors mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white/50 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    <p class="text-white font-semibold">Importar</p>
+                    <p class="text-white/60 text-xs mt-1">(mp4, mov, mkv, avi, webm, jpg, jpeg, png)</p>
                 </div>
             </div>
-            <div id="splitter"></div>
-            <div class="log-panel" id="right-panel">
-                <div class="log-header">
-                    <h3>Log de Atividades</h3>
-                    <button class="btn btn-small" id="open-log-file-btn"><i data-lucide="file-text"></i>Abrir Log</button>
+        </aside>
+
+        <!-- Painel Principal (Direita) -->
+        <div id="main-panel" class="flex-grow flex flex-col min-w-0">
+            <div id="title-bar" class="w-full h-12 flex-shrink-0 flex items-center px-4 justify-between">
+                <div class="window-controls-container">
+                    <div id="close-btn" class="window-control-btn bg-red-500"></div>
+                    <div id="minimize-btn" class="window-control-btn bg-yellow-500"></div>
+                    <div id="maximize-btn" class="window-control-btn bg-green-500"></div>
                 </div>
-                <ul class="log-list" id="log-list-area">
-                    <li class="log-item log-info"><span class="log-icon">ℹ️</span> <span>Bem-vindo! Adicione arquivos para começar.</span></li>
-                </ul>
+                <span class="app-title">W4ll-E</span>
+                <div class="w-20"></div>
             </div>
-        </main>
-    </div>
 
-    <!-- #################### TELA DE PRESETS #################### -->
-    <div id="config-view" class="app-container">
-        <header class="config-header">
-            <h1>Presets de Formato</h1>
-            <div>
-                 <button class="btn" id="back-to-main-btn"><i data-lucide="arrow-left"></i> Voltar</button>
-                <button class="btn" id="import-btn"><i data-lucide="download"></i> Importar</button>
-                <button class="btn" id="export-btn"><i data-lucide="upload"></i> Exportar</button>
-                <button class="btn btn-primary" id="add-new-btn">
-                    <i data-lucide="plus"></i> Novo Preset
-                </button>
-            </div>
-        </header>
-
-        <main class="main-content">
-            <div id="presets-list" class="presets-list-container"></div>
-            <div id="form-container" class="form-container hidden">
-                <h2 id="form-title">Adicionar Novo Preset</h2>
-                <form id="preset-form">
-                    <input type="hidden" id="preset-id">
-                    
-                    <div class="form-group">
-                        <label for="preset-name">Nome do Preset (ex: WIDEFULLHD, TER, MUP)</label>
-                        <input type="text" id="preset-name" required>
+            <main class="w-full flex-grow p-6 pt-0 flex flex-col min-h-0">
+                <!-- Campo Nome do Cliente (movido para cá) -->
+                <div class="mb-4 flex-shrink-0">
+                    <input type="text" id="client-name" placeholder="Nome do Cliente" class="w-full bg-white/10 text-white p-3 rounded-full border-2 border-transparent focus:border-white/30 focus:outline-none transition-all">
+                </div>
+                
+                <div class="flex-grow bg-black bg-opacity-20 rounded-2xl p-4 flex flex-col overflow-hidden">
+                    <div id="queue-list" class="flex-grow space-y-3 overflow-y-auto custom-scrollbar pr-3">
+                        <!-- Itens da fila -->
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="preset-width">Largura (px)</label>
-                            <input type="number" id="preset-width" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="preset-height">Altura (px)</label>
-                            <input type="number" id="preset-height" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="preset-duration">Duração (s)</label>
-                            <input type="number" id="preset-duration" required>
-                        </div>
-                    </div>
-                    <div class="form-group form-checkbox">
-                        <input type="checkbox" id="preset-applyBar">
-                        <label for="preset-applyBar">Aplicar Barra Preta para preencher?</label>
-                    </div>
-                    <div class="form-group hidden" id="bar-size-group">
-                        <label for="preset-barSize">Tamanho da Barra (px)</label>
-                        <input type="number" id="preset-barSize" value="0">
-                        <small>Tamanho da barra preta a ser adicionada (ex: 75). O vídeo será redimensionado para caber.</small>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Salvar</button>
-                        <button type="button" id="cancel-form-btn" class="btn">Cancelar</button>
-                    </div>
-                </form>
-            </div>
-        </main>
-    </div>
-
-    <!-- Templates -->
-    <template id="queue-item-template">
-        <li class="queue-item">
-            <div class="queue-item-info">
-                <span class="file-name"></span>
-                <span class="status-text">Aguardando</span>
-            </div>
-            <div class="progress-bar-container">
-                <div class="progress-bar"></div>
-            </div>
-        </li>
-    </template>
-    <template id="preset-item-template">
-        <div class="preset-item">
-            <div class="preset-info">
-                <strong class="preset-name-display"></strong>
-                <span class="preset-details"></span>
-            </div>
-            <div class="preset-actions">
-                <button class="btn btn-small edit-btn">Editar</button>
-                <button class="btn btn-small btn-danger delete-btn">Apagar</button>
-            </div>
+                </div>
+                <div id="action-buttons" class="flex items-center justify-center gap-4 flex-shrink-0 pt-6">
+                    <button id="clear-queue-btn" class="action-btn bg-white/10" style="display: none;">Limpar Fila</button>
+                    <button id="log-btn" class="action-btn bg-white/10" style="display: none;">Ver Log</button>
+                    <button id="pause-btn" class="action-btn bg-gradient-to-r from-amber-500 to-orange-500" style="display: none;">Pausar</button>
+                    <button id="cancel-btn" class="action-btn bg-gradient-to-r from-red-500 to-pink-600" style="display: none;">Cancelar</button>
+                    <button id="start-btn" class="action-btn main-action-btn">Iniciar Fila</button>
+                </div>
+            </main>
         </div>
-    </template>
+    </div>
 
-    <!-- Ligação para a biblioteca de ícones Lucide -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Ligação para o arquivo JavaScript externo -->
-    <script src="script.js" defer></script>
+    <div id="log-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close-btn">&times;</span>
+            <h4>Log Completo do Processo</h4>
+            <pre id="log-output" class="custom-scrollbar"></pre>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
 </body>
 </html>
