@@ -2,27 +2,23 @@
 /* eslint-disable no-undef */
 const fs = require('fs');
 const path = require('path');
-const { exec, execSync } = require('child_process');
+const { exec } = require('child_process');
 const util = require('util');
+const os = require('os');
 
-// Promisify exec para operações assíncronas
 const execPromise = util.promisify(exec);
+const isWindows = os.platform() === 'win32';
 
-let FFPROBE, FFMPEG_PATH;
-try {
-  // O caminho agora aponta para a pasta 'utils' dentro do diretório do script
-  const utilsPath = path.resolve(__dirname, 'utils', 'ffmpegUtils.js');
-  if (!fs.existsSync(utilsPath)) {
-      throw new Error(`Ficheiro de configuração não encontrado em: ${utilsPath}`);
-  }
-  const ffmpegUtils = require(utilsPath);
-  FFPROBE = ffmpegUtils.FFPROBE;
-  FFMPEG_PATH = ffmpegUtils.FFMPEG.split(' ')[0];
-} catch (e) {
-  console.warn(`⚠️  Aviso: ${e.message}. Usando padrões.`);
-  FFPROBE = 'ffprobe';
-  FFMPEG_PATH = 'ffmpeg';
-}
+// --- ALTERAÇÃO CORRIGIDA ---
+// Recebemos o caminho para a PASTA do ffmpeg, não o comando completo.
+const inputFolder = process.argv[2];
+let clientName = process.argv[3];
+const ffmpegFolderPath = process.argv[4]; // Argumento 4 agora é a pasta do FFmpeg
+
+// Montamos os caminhos completos para os executáveis DENTRO deste script.
+const FFMPEG_EXECUTABLE = path.join(ffmpegFolderPath, isWindows ? 'ffmpeg.exe' : 'ffmpeg');
+const FFPROBE_EXECUTABLE = path.join(ffmpegFolderPath, isWindows ? 'ffprobe.exe' : 'ffprobe');
+
 
 function gerarNomeUnico(pasta, nomeBase, extensao) {
   const nomeBaseSanitizado = nomeBase.replace(/[\\?%*:|"<>]/g, '-');
@@ -42,7 +38,9 @@ function gerarNomeUnico(pasta, nomeBase, extensao) {
 
 async function getVideoInfo(filePath) {
   try {
-    const { stdout } = await execPromise(`${FFPROBE} -v quiet -print_format json -show_streams -show_format "${filePath}"`);
+    // Usamos o caminho do executável e colocamos aspas em volta dele e do arquivo.
+    const command = `"${FFPROBE_EXECUTABLE}" -v quiet -print_format json -show_streams -show_format "${filePath}"`;
+    const { stdout } = await execPromise(command);
     const info = JSON.parse(stdout);
     const stream = info.streams.find(s => s.codec_type === 'video');
     if (!stream) return null;
@@ -52,7 +50,8 @@ async function getVideoInfo(filePath) {
       duration: parseFloat(info.format.duration)
     };
   } catch (err) {
-    console.error(`      - ❌ Erro ao obter informações de ${path.basename(filePath)}.`);
+    // Adicionamos mais detalhes ao log de erro para facilitar a depuração.
+    console.error(`      - ❌ Erro ao obter informações de ${path.basename(filePath)}. Detalhes: ${err.message}`);
     return null;
   }
 }
@@ -60,7 +59,8 @@ async function getVideoInfo(filePath) {
 async function detectBlackBars(filePath, videoWidth, videoHeight, duration) {
     try {
         const analysisTime = duration > 1 ? 1 : 0;
-        const command = `${FFMPEG_PATH} -ss ${analysisTime} -i "${filePath}" -t 4 -vf "cropdetect" -f null -`;
+        // Usamos o caminho do executável e colocamos aspas em volta dele e do arquivo.
+        const command = `"${FFMPEG_EXECUTABLE}" -ss ${analysisTime} -i "${filePath}" -t 4 -vf "cropdetect" -f null -`;
         const { stderr } = await execPromise(command);
         const cropRegex = /crop=(\d+):(\d+):(\d+):(\d+)/g;
         let match;
@@ -108,10 +108,6 @@ function getBaseOutputName(width, height, duration, hasBars, dateFormatted, clie
 }
 
 async function main() {
-    // Pega os argumentos da linha de comando
-    const inputFolder = process.argv[2];
-    let clientName = process.argv[3]; // O nome do cliente agora é o terceiro argumento
-
     if (!clientName || clientName.trim() === '') {
       clientName = 'C';
       console.log("ℹ️  Nenhum nome de cliente fornecido. Usando '_C' como padrão.");
@@ -122,6 +118,11 @@ async function main() {
     if (!inputFolder || !fs.existsSync(inputFolder)) {
       console.error('❌ Pasta de entrada não fornecida ou não encontrada.');
       return;
+    }
+
+    if (!ffmpegFolderPath || !fs.existsSync(FFMPEG_EXECUTABLE)) {
+        console.error('❌ Caminho para a pasta do FFmpeg não fornecido ou executável não encontrado.');
+        return;
     }
   
     const dataAtual = new Date();

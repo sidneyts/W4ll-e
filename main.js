@@ -6,46 +6,56 @@ const os = require('os');
 const { exec } = require('child_process');
 const util = require('util');
 
+const ffmpegUtils = require('./scripts/ffmpegUtils.js');
+
 const execPromise = util.promisify(exec);
 let mainWindow;
 
-let FFMPEG, FFPROBE;
+const { FFMPEG, FFPROBE } = ffmpegUtils;
 
-const PROCESSING_PLAN = {
-    WFHD_SOURCE: [
-        { format: 'WFHD', width: 1920, height: 1080, duration: 10, applyBar: true },
-        { format: 'WIDE', width: 1280, height: 720, duration: 10, applyBar: true },
-        { format: 'BOX',  width: 800,  height: 600, duration: 10, applyBar: false, letterbox: true },
-        { format: 'TER',  width: 1280, height: 720, duration: 15, applyBar: false }
-    ],
-    BOX_SOURCE: [ { format: 'BOX', width: 800, height: 600, duration: 10, applyBar: true } ],
-    MUP_SOURCE: [
-        { format: 'VERT', width: 608,  height: 1080, duration: 10, applyBar: true },
-        { format: 'VFHD', width: 1080, height: 1920, duration: 10, applyBar: true },
-        { format: 'MUP',  width: 1080, height: 1920, duration: 10, applyBar: false }
-    ],
-    MUB_SOURCE: [
-        { format: 'LED4', width: 864, height: 288, duration: 10, applyBar: false },
-        { format: 'MUB', width: 2048, height: 720, duration: 10, applyBar: false }
-    ],
-    TOTEMG_SOURCE:[ { format: 'TOTEMG', width: 960, height: 1344, duration: 10, applyBar: false } ],
-    WALL_SOURCE: [ { format: 'WALL', width: 1920, height: 540, duration: 10, applyBar: false } ],
-    LED_SOURCE: [ { format: 'LED', width: 3360, height: 240, duration: 10, applyBar: false } ],
-    SUPERLED_SOURCE: [ { format: 'SUPERLED', width: 3648, height: 1152, duration: 30, applyBar: false } ], 
-};
+const presetsFilePath = path.join(app.getPath('userData'), 'presets.json');
 
-const BAR_FILTERS = {
-    VERT: '[0:v]scale=608:1005,pad=608:1080:0:0:color=black,setsar=1[out]',
-    VFHD: '[0:v]scale=1080:1845,pad=1080:1920:0:0:color=black,setsar=1[out]',
-    WIDE: '[0:v]scale=1280:645,pad=1280:720:0:0:color=black,setsar=1[out]',
-    WFHD: '[0:v]scale=1920:1005,pad=1920:1080:0:0:color=black,setsar=1[out]',
-    BOX:  '[0:v]scale=800:540,pad=800:600:0:0:color=black,setsar=1[out]',
-};
+function getDefaultPresets() {
+    return [
+        { id: 'WFHD', name: 'WIDEFULLHD', width: 1920, height: 1080, duration: 10, applyBar: true, letterbox: false, barSize: 75 },
+        { id: 'WIDE', name: 'WIDE', width: 1280, height: 720, duration: 10, applyBar: true, letterbox: false, barSize: 75 },
+        { id: 'TER', name: 'TER', width: 1280, height: 720, duration: 15, applyBar: false, letterbox: false, barSize: 0 },
+        { id: 'BOX', name: 'BOX', width: 800, height: 600, duration: 10, applyBar: true, letterbox: false, barSize: 60 },
+        { id: 'VFHD', name: 'VERTFULLHD', width: 1080, height: 1920, duration: 10, applyBar: true, letterbox: false, barSize: 75 },
+        { id: 'MUP', name: 'MUP', width: 1080, height: 1920, duration: 10, applyBar: false, letterbox: false, barSize: 0 },
+        { id: 'VERT', name: 'VERT', width: 608, height: 1080, duration: 10, applyBar: true, letterbox: false, barSize: 75 },
+    ];
+}
+
+ipcMain.handle('presets:load', async () => {
+    try {
+        if (fs.existsSync(presetsFilePath)) {
+            const data = await fs.promises.readFile(presetsFilePath, 'utf-8');
+            return JSON.parse(data);
+        } else {
+            const defaultPresets = getDefaultPresets();
+            await fs.promises.writeFile(presetsFilePath, JSON.stringify(defaultPresets, null, 2));
+            return defaultPresets;
+        }
+    } catch (error) {
+        console.error("Failed to load presets:", error);
+        return getDefaultPresets();
+    }
+});
+
+ipcMain.on('presets:save', async (event, presets) => {
+    try {
+        await fs.promises.writeFile(presetsFilePath, JSON.stringify(presets, null, 2));
+    } catch (error) {
+        console.error("Failed to save presets:", error);
+    }
+});
 
 async function getVideoInfo(filePath) {
   try {
     if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return null;
-    const { stdout } = await execPromise(`${FFPROBE} -v quiet -print_format json -show_streams -show_format "${filePath}"`);
+    const command = `${FFPROBE} -v quiet -print_format json -show_streams -show_format "${filePath}"`;
+    const { stdout } = await execPromise(command);
     const info = JSON.parse(stdout);
     const stream = info.streams.find(s => s.codec_type === 'video');
     if (!stream) return null;
@@ -57,54 +67,46 @@ async function getVideoInfo(filePath) {
   }
 }
 
-async function classifyInputFile(filePath, encoderConfig, workDir, filesToDelete) {
-    const fileExt = path.extname(filePath).toLowerCase();
-    let processedPath = filePath;
-    let isTemp = false;
+ipcMain.handle('video:getInfo', async (event, filePath) => {
+    return await getVideoInfo(filePath);
+});
 
-    if (['.jpg', '.jpeg', '.png'].includes(fileExt)) {
-        const tempVideoPath = path.join(workDir, `${path.parse(filePath).name}_temp_image.mp4`);
-        const cmd = `${FFMPEG} -loop 1 -i "${filePath}" -t 10 -vf "fps=30,format=yuv420p,scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1" -c:v ${encoderConfig.codec} ${encoderConfig.quality} -y "${tempVideoPath}"`;
-        await execPromise(cmd);
-        processedPath = tempVideoPath;
-        isTemp = true;
-        filesToDelete.add(tempVideoPath);
-    }
-
-    const info = await getVideoInfo(processedPath);
-    if (!info) return { type: 'UNKNOWN', path: filePath, isTemp: false, tempPath: null, info: null };
-
-    const { width, height, duration } = info;
-    const ratio = width / height;
-    const segundos = Math.round(duration);
-
-    let type = 'UNKNOWN';
-    if ((segundos >= 8 && segundos <= 16) && Math.abs(ratio - (16/9)) < 0.25) type = 'WFHD_SOURCE';
-    else if ((segundos >= 8 && segundos <= 15) && Math.abs(ratio - (4/3)) < 0.15) type = 'BOX_SOURCE';
-    else if ((segundos >= 8 && segundos <= 15) && Math.abs(ratio - (9/16)) < 0.05) type = 'MUP_SOURCE';
-    else if ((segundos >= 8 && segundos <= 15) && Math.abs(ratio - (2048/720)) < 0.1) type = 'MUB_SOURCE';
-    else if ((segundos >= 8 && segundos <= 15) && Math.abs(ratio - (960/1344)) < 0.05) type = 'TOTEMG_SOURCE';
-    else if ((segundos >= 8 && segundos <= 15) && Math.abs(ratio - (1920/540)) < 0.05) type = 'WALL_SOURCE';
-    else if ((segundos >= 8 && segundos <= 15) && Math.abs(ratio - (3360/240)) < 0.05) type = 'LED_SOURCE';
-    else if (segundos === 30 && width === 3648 && height === 1152) type = 'SUPERLED_SOURCE';
-
-    return { type, path: filePath, isTemp, tempPath: isTemp ? processedPath : null, info };
+function isPresetCompatible(videoInfo, preset) {
+    if (!videoInfo) return false;
+    const sourceRatio = videoInfo.width / videoInfo.height;
+    const presetRatio = preset.width / preset.height;
+    const ratioDiff = Math.abs(sourceRatio - presetRatio);
+    const timeDiff = Math.abs(videoInfo.duration - preset.duration);
+    return ratioDiff <= 0.2 && timeDiff <= 2;
 }
 
 
 const createWindow = () => {
     mainWindow = new BrowserWindow({
         width: 860,
-        height: 640,
+        height: 780,
         frame: false,
         transparent: true,
         resizable: false,
-        icon: path.join(__dirname, 'assets', os.platform() === 'win32' ? 'icon.ico' : 'icon.icns'), // Caminho do ícone atualizado
+        icon: path.join(__dirname, 'assets', os.platform() === 'win32' ? 'icon.ico' : 'icon.icns'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         }
     });
     mainWindow.loadFile('index.html');
+
+    // Adiciona listeners para os eventos de foco e perda de foco
+    mainWindow.on('blur', () => {
+        if (mainWindow) {
+            mainWindow.webContents.send('window-focus-change', false);
+        }
+    });
+
+    mainWindow.on('focus', () => {
+        if (mainWindow) {
+            mainWindow.webContents.send('window-focus-change', true);
+        }
+    });
 };
 
 app.whenReady().then(createWindow);
@@ -147,15 +149,17 @@ ipcMain.on('start-processing', async (event, data) => {
     isPaused = false;
     isCancelled = false;
     
-    const { videos: videoPaths, clientName } = data;
+    const { videos: videoPaths, clientName, selectedPresets } = data;
     const window = BrowserWindow.fromWebContents(event.sender);
     let fullLog = '';
 
-    if (videoPaths.length === 0) return;
+    if (videoPaths.length === 0 || selectedPresets.length === 0) {
+        window.webContents.send('final-log', 'Nenhum vídeo ou preset selecionado.');
+        return;
+    }
 
     const workDir = path.dirname(videoPaths[0]);
     const scriptTempDir = path.join(workDir, `.render-scripts-${Date.now()}`);
-    const utilsDir = path.join(scriptTempDir, 'utils');
     const antigosDir = path.join(workDir, 'Antigos');
     const filesToDelete = new Set();
 
@@ -164,18 +168,12 @@ ipcMain.on('start-processing', async (event, data) => {
     };
     
     try {
-        await fs.promises.mkdir(utilsDir, { recursive: true });
+        await fs.promises.mkdir(scriptTempDir, { recursive: true });
         await fs.promises.mkdir(antigosDir, { recursive: true });
         fullLog += `[MAIN] Ambiente de trabalho definido como: ${workDir}\n`;
 
-        await fs.promises.copyFile(path.join(__dirname, 'scripts/rename.js'), path.join(scriptTempDir, 'rename.js'));
-        const ffmpegUtilsPath = path.join(__dirname, 'scripts/ffmpegUtils.js');
-        await fs.promises.copyFile(ffmpegUtilsPath, path.join(utilsDir, 'ffmpegUtils.js'));
+        await fs.promises.copyFile(path.join(app.getAppPath(), 'scripts/rename.js'), path.join(scriptTempDir, 'rename.js'));
         
-        const ffmpegUtils = require(path.join(utilsDir, 'ffmpegUtils.js'));
-        FFMPEG = ffmpegUtils.FFMPEG;
-        FFPROBE = ffmpegUtils.FFPROBE;
-
         fullLog += '\n--- ARQUIVANDO ARQUIVOS ORIGINAIS ---\n';
         const sourceFiles = [];
         for (const originalPath of videoPaths) {
@@ -189,98 +187,97 @@ ipcMain.on('start-processing', async (event, data) => {
         const encoderConfig = { codec: 'libx264', quality: '-preset fast -crf 25' };
         fullLog += `[MAIN] Usando encoder padrão: ${encoderConfig.codec}\n`;
 
-        const classifiedFiles = [];
-        for (const { originalPath, newSourcePath } of sourceFiles) {
-            const classified = await classifyInputFile(newSourcePath, encoderConfig, workDir, filesToDelete);
-            classifiedFiles.push({ ...classified, originalPath: originalPath });
-        }
-        const sourceTypesPresent = new Set(classifiedFiles.map(f => f.type).filter(t => t !== 'UNKNOWN'));
+        for (const sourceFile of sourceFiles) {
+            const { originalPath, newSourcePath } = sourceFile;
 
-        for (const classifiedFile of classifiedFiles) {
-            while (isPaused) {
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
-            if (isCancelled) {
-                fullLog += '\n[MAIN] Processamento cancelado pelo usuário.\n';
-                window.webContents.send('processing-cancelled', classifiedFile.originalPath);
-                break;
-            }
-
-            const { type, tempPath, originalPath, info } = classifiedFile;
-            const sourcePath = tempPath || classifiedFile.path;
-            const originalBaseName = path.parse(sourcePath).name;
-            const sourceDuration = info.duration;
-
-            fullLog += `\n--- Processando: ${path.basename(originalPath)} ---\n`;
             window.webContents.send('processing-started', originalPath);
             sendProgress(originalPath, 0);
 
-            let plan = PROCESSING_PLAN[type];
-            if (!plan) {
-                fullLog += `   - 🟡 Tipo de arquivo desconhecido. Pulando renderização.\n`;
-                sendProgress(originalPath, 100);
+            let tempImagePath = null;
+            let sourceForProcessing = newSourcePath;
+
+            const fileExt = path.extname(newSourcePath).toLowerCase();
+            if (['.jpg', '.jpeg', '.png'].includes(fileExt)) {
+                tempImagePath = path.join(workDir, `${path.parse(newSourcePath).name}_temp_image.mp4`);
+                const cmd = `${FFMPEG} -loop 1 -i "${newSourcePath}" -t 10 -vf "fps=30,format=yuv420p,scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1" -c:v ${encoderConfig.codec} ${encoderConfig.quality} -y "${tempImagePath}"`;
+                await execPromise(cmd);
+                sourceForProcessing = tempImagePath;
+                filesToDelete.add(tempImagePath);
+            }
+
+            const videoInfo = await getVideoInfo(sourceForProcessing);
+            if (!videoInfo) {
+                const errorMsg = `Não foi possível analisar as informações do vídeo. O arquivo pode estar corrompido ou não ser um vídeo válido.`;
+                fullLog += `\n--- ⚠️  Aviso: Pulando ${path.basename(originalPath)} ---\n   - MOTIVO: ${errorMsg}\n`;
+                window.webContents.send('processing-error', { videoPath: originalPath, error: errorMsg });
                 continue;
             }
-            if (type === 'WFHD_SOURCE' && sourceTypesPresent.has('BOX_SOURCE')) {
-                plan = plan.filter(output => output.format !== 'BOX');
-            }
             
-            let progress = 0;
-            const progressStep = 100 / (plan.length || 1);
+            const { duration: sourceDuration } = videoInfo;
+            const processingErrors = [];
+            
+            for (const preset of selectedPresets) {
+                while (isPaused) { await new Promise(resolve => setTimeout(resolve, 500)); }
+                if (isCancelled) break;
 
-            for (const output of plan) {
-                let outputPath;
-                let filter;
-                let isFilterComplex = false;
+                if (!isPresetCompatible(videoInfo, preset)) {
+                    fullLog += `   - ℹ️ Pulando preset '${preset.name}' por ser incompatível com '${path.basename(sourceForProcessing)}'.\n`;
+                    continue;
+                }
+
+                const originalBaseName = path.parse(sourceForProcessing).name;
+                const outputPath = path.join(workDir, `${originalBaseName}_${preset.name}.mp4`);
 
                 let timeFilter = '';
-                const targetDuration = output.duration;
-                if (sourceDuration && targetDuration && Math.abs(sourceDuration - targetDuration) > 0.5) {
-                    const ptsMultiplier = targetDuration / sourceDuration;
+                if (sourceDuration && preset.duration && Math.abs(sourceDuration - preset.duration) > 0.5) {
+                    const ptsMultiplier = preset.duration / sourceDuration;
                     timeFilter = `,setpts=${ptsMultiplier.toFixed(4)}*PTS`;
-                    fullLog += `     - Alterando velocidade do vídeo (duração de ${sourceDuration.toFixed(1)}s para ${targetDuration}s)\n`;
-                }
-
-                if (output.applyBar) {
-                    outputPath = path.join(workDir, `${originalBaseName}_${output.format}_BAR.mp4`);
-                    filter = BAR_FILTERS[output.format].replace('[out]', `${timeFilter}[out]`);
-                    isFilterComplex = true;
-                } else {
-                    outputPath = path.join(workDir, `${originalBaseName}_${output.format}.mp4`);
-                    if (output.letterbox) {
-                        filter = `scale=${output.width}:${output.height}:force_original_aspect_ratio=decrease,pad=${output.width}:${output.height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1`;
-                    } else {
-                        filter = `scale=${output.width}:${output.height},setsar=1`;
-                    }
-                    filter += timeFilter;
                 }
                 
-                let cmd;
-                if (isFilterComplex) {
-                    cmd = `${FFMPEG} -i "${sourcePath}" -filter_complex "${filter}" -map "[out]" -t ${output.duration} -c:v ${encoderConfig.codec} ${encoderConfig.quality} -an -y "${outputPath}"`;
+                let filter;
+                if (preset.letterbox) {
+                    filter = `scale=${preset.width}:${preset.height}:force_original_aspect_ratio=decrease,pad=${preset.width}:${preset.height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1${timeFilter}`;
+                } else if (preset.applyBar) {
+                    const barSize = preset.barSize || 0;
+                    const contentHeight = preset.height - barSize;
+                    const paddingY = Math.floor(barSize / 2);
+                    filter = `scale=${preset.width}:${contentHeight},pad=${preset.width}:${preset.height}:0:${paddingY}:color=black,setsar=1${timeFilter}`;
                 } else {
-                    cmd = `${FFMPEG} -i "${sourcePath}" -vf "${filter}" -t ${output.duration} -c:v ${encoderConfig.codec} ${encoderConfig.quality} -an -y "${outputPath}"`;
+                    filter = `scale=${preset.width}:${preset.height},setsar=1${timeFilter}`;
                 }
+
+                const cmd = `${FFMPEG} -i "${sourceForProcessing}" -vf "${filter}" -t ${preset.duration} -c:v ${encoderConfig.codec} ${encoderConfig.quality} -an -y "${outputPath}"`;
 
                 try {
                     await execPromise(cmd);
                     fullLog += `     - Criado: ${path.basename(outputPath)}\n`;
                 } catch (e) {
-                    fullLog += `     - ❌ Falha ao gerar ${output.format}: ${e.message}\n`;
+                    const errorMessage = `Falha ao gerar ${preset.name}: ${e.message}`;
+                    fullLog += `     - ❌ ${errorMessage}\n`;
+                    processingErrors.push(errorMessage);
                 }
-                progress += progressStep;
-                sendProgress(originalPath, progress);
             }
-            sendProgress(originalPath, 100);
-            window.webContents.send('processing-completed', originalPath);
+            
+            if (isCancelled) {
+                fullLog += '\n[MAIN] Processamento cancelado pelo usuário.\n';
+                window.webContents.send('processing-cancelled', originalPath);
+                break;
+            }
+
+            if (processingErrors.length > 0) {
+                window.webContents.send('processing-error', { videoPath: originalPath, error: processingErrors.join('\n') });
+            } else {
+                window.webContents.send('processing-completed', originalPath);
+            }
             fullLog += `--- Concluído: ${path.basename(originalPath)} ---\n`;
         }
 
         if (!isCancelled) {
             fullLog += '\n--- A INICIAR SCRIPT DE RENOMEAÇÃO ---\n';
-            const renameCommand = `node rename.js "${workDir}" "${clientName}"`;
-            const renameLog = await execPromise(renameCommand, { cwd: scriptTempDir });
-            fullLog += renameLog;
+            const renameCommand = `node rename.js "${workDir}" "${clientName}" "${ffmpegUtils.ffmpegPath}"`;
+            const { stdout, stderr } = await execPromise(renameCommand, { cwd: scriptTempDir });
+            fullLog += stdout;
+            if (stderr) fullLog += `\n[RENAME SCRIPT STDERR]:\n${stderr}\n`;
             fullLog += '--- SCRIPT DE RENOMEAÇÃO CONCLUÍDO ---\n';
         }
 
@@ -296,7 +293,7 @@ ipcMain.on('start-processing', async (event, data) => {
             }
         }
 
-        fullLog += `\n✅ Processamento da fila concluído! Os ficheiros finais estão na pasta de origem e os originais foram arquivados.\n`;
+        fullLog += `\n✅ Processamento da fila concluído!\n`;
 
     } catch (error) {
         fullLog += `\n❌ ERRO GERAL: Ocorreu uma falha.\n${error.stack}\n`;

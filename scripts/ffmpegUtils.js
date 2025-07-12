@@ -1,20 +1,26 @@
-// utils/ffmpegUtils.js
+// scripts/ffmpegUtils.js
 
 const os = require('os');
+const path = require('path');
+const { app } = require('electron');
 const isWindows = os.platform() === 'win32';
 
-// Define o caminho para o FFMPEG com base no sistema operacional.
-// No Windows, ele espera que o FFmpeg esteja em C:\ffmpeg\bin\
-// No Mac/Linux, ele espera que esteja no caminho padrão /usr/local/bin/
-// Adiciona flags para reduzir o "ruído" no console, mostrando apenas os erros.
-const FFMPEG = isWindows
-  ? `"C:\\ffmpeg\\bin\\ffmpeg.exe" -loglevel error -hide_banner`
-  : "/usr/local/bin/ffmpeg -loglevel error -hide_banner";
+// Esta é a forma correta e segura de verificar se o app está empacotado,
+// pois este arquivo só será chamado pelo main.js.
+const isPackaged = app.isPackaged;
 
-// Define o caminho para o FFPROBE, seguindo a mesma lógica.
-const FFPROBE = isWindows
-  ? `"C:\\ffmpeg\\bin\\ffprobe.exe"`
-  : "/usr/local/bin/ffprobe";
+// Se o app estiver empacotado, os recursos estarão na pasta 'resources'.
+// Em modo de desenvolvimento, apontamos para a pasta 'ffmpeg' na raiz do projeto.
+const ffmpegPath = isPackaged
+  ? path.join(process.resourcesPath, 'ffmpeg')
+  : path.join(app.getAppPath(), 'ffmpeg');
 
-// Exporta as constantes usando a sintaxe CommonJS (module.exports)
-module.exports = { FFMPEG, FFPROBE };
+const FFMPEG_BINARY = isWindows ? 'ffmpeg.exe' : 'ffmpeg';
+const FFPROBE_BINARY = isWindows ? 'ffprobe.exe' : 'ffprobe';
+
+// Monta os comandos finais, garantindo que o caminho esteja entre aspas para evitar problemas com espaços
+const FFMPEG = `"${path.join(ffmpegPath, FFMPEG_BINARY)}"`;
+const FFPROBE = `"${path.join(ffmpegPath, FFPROBE_BINARY)}"`;
+
+// Exporta as constantes para serem usadas pelo main.js
+module.exports = { FFMPEG, FFPROBE, ffmpegPath };

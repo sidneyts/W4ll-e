@@ -1,6 +1,6 @@
 {
   "name": "w4ll-e-renderer",
-  "version": "2.0.0",
+  "version": "2.2.0",
   "description": "Aplicativo de desktop para automatizar a renderização e renomeação de vídeos.",
   "main": "main.js",
   "scripts": {
@@ -25,6 +25,18 @@
       "style.css",
       "scripts/**/*",
       "assets/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "./ffmpeg/",
+        "to": "ffmpeg",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asarUnpack": [
+      "**/ffmpeg/**"
     ],
     "win": {
       "target": "nsis",
