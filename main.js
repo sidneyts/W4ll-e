@@ -6,6 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const { exec } = require('child_process');
 const util = require('util');
+const { i18next, initI18n } = require('./i18n'); // Importa a nova estrutura
 
 const ffmpegUtils = require('./scripts/ffmpegUtils.js');
 
@@ -14,11 +15,11 @@ let mainWindow;
 
 const { FFMPEG, FFPROBE } = ffmpegUtils;
 
-const presetsFilePath = path.join(app.getPath('userData'), 'presets.json');
-
 // Configurações do autoUpdater
 autoUpdater.logger = require("electron-log");
 autoUpdater.logger.transports.file.level = "info";
+
+const presetsFilePath = path.join(app.getPath('userData'), 'presets.json');
 
 function getDefaultPresets() {
     return [
@@ -88,11 +89,11 @@ function isPresetCompatible(videoInfo, preset) {
 
 const createWindow = () => {
     mainWindow = new BrowserWindow({
-        width: 860,
-        height: 780,
+        width: 720, // Largura reduzida para FullHD
+        height: 680, // Altura reduzida para FullHD
         frame: false,
         transparent: true,
-        resizable: false,
+        resizable: true,
         icon: path.join(__dirname, 'assets', os.platform() === 'win32' ? 'icon.ico' : 'icon.icns'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
@@ -113,9 +114,9 @@ const createWindow = () => {
     });
 };
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+    await initI18n(); // Espera as traduções serem carregadas
     createWindow();
-    // Verifica atualizações assim que o app estiver pronto
     autoUpdater.checkForUpdatesAndNotify();
 });
 
@@ -143,6 +144,12 @@ autoUpdater.on('update-downloaded', () => {
       autoUpdater.quitAndInstall();
     }
   });
+});
+
+// Novo handler para obter as traduções
+ipcMain.handle('get-translations', (event, lng) => {
+    const language = lng || i18next.language;
+    return i18next.getResourceBundle(language, 'translation');
 });
 
 ipcMain.on('check-for-updates', () => {

@@ -46,9 +46,36 @@ let isProcessing = false;
 let isPaused = false;
 let presets = [];
 let activePresetId = null;
+let translations = {};
 
 // --- Platform Detection ---
 document.body.classList.add(`platform-${window.electronAPI.getPlatform()}`);
+
+// --- i18n ---
+async function applyTranslations() {
+    translations = await window.electronAPI.getTranslations();
+    
+    document.querySelectorAll('[data-i18n-key]').forEach(el => {
+        const key = el.getAttribute('data-i18n-key');
+        if (translations[key]) {
+            el.textContent = translations[key];
+        }
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (translations[key]) {
+            el.placeholder = translations[key];
+        }
+    });
+
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (translations[key]) {
+            el.title = translations[key];
+        }
+    });
+}
 
 
 // --- UI Update Functions ---
@@ -64,7 +91,7 @@ function updateButtonsState() {
         logBtn.style.display = 'none';
         pauseBtn.style.display = 'inline-flex';
         cancelBtn.style.display = 'inline-flex';
-        pauseBtn.textContent = isPaused ? 'Retomar' : 'Pausar';
+        pauseBtn.textContent = isPaused ? translations.resume : translations.pause;
         managePresetsBtn.disabled = true;
     } else {
         startBtn.style.display = hasPendingItems && hasSelectedPresets ? 'inline-flex' : 'none';
@@ -81,7 +108,7 @@ function updateQueueUI() {
     
     if (videoQueue.length === 0) {
         const p = document.createElement('p');
-        p.textContent = 'Fila vazia';
+        p.textContent = translations.emptyQueue || 'Fila vazia';
         p.className = 'text-center text-slate-400 p-4';
         queueList.appendChild(p);
         updateButtonsState();
@@ -223,13 +250,13 @@ function renderPresetCheckboxes() {
 function renderSavedPresetsList() {
     savedPresetsList.innerHTML = '';
     const newPresetItem = document.createElement('div');
-    newPresetItem.textContent = '+ Adicionar Novo Preset';
+    newPresetItem.textContent = translations.addNewPreset || '+ Adicionar Novo Preset';
     newPresetItem.className = 'saved-preset-item font-bold text-purple-300';
     newPresetItem.addEventListener('click', () => {
         activePresetId = null;
         presetForm.reset();
         barSizeContainer.style.display = 'none';
-        presetFormTitle.textContent = 'Adicionar Novo Preset';
+        presetFormTitle.textContent = translations.addNewPreset || 'Adicionar Novo Preset';
         deletePresetBtn.style.display = 'none';
         document.querySelectorAll('.saved-preset-item.active').forEach(el => el.classList.remove('active'));
         newPresetItem.classList.add('active');
@@ -246,7 +273,7 @@ function renderSavedPresetsList() {
         }
         item.addEventListener('click', () => {
             activePresetId = preset.id;
-            presetFormTitle.textContent = 'Editar Preset';
+            presetFormTitle.textContent = translations.editPreset || 'Editar Preset';
             document.getElementById('preset-id').value = preset.id;
             document.getElementById('preset-name').value = preset.name;
             document.getElementById('preset-width').value = preset.width;
@@ -271,7 +298,7 @@ function resetPresetForm() {
     activePresetId = null;
     presetForm.reset();
     barSizeContainer.style.display = 'none';
-    presetFormTitle.textContent = 'Adicionar Novo Preset';
+    presetFormTitle.textContent = translations.addNewPreset || 'Adicionar Novo Preset';
     deletePresetBtn.style.display = 'none';
     renderSavedPresetsList();
 }
@@ -552,7 +579,8 @@ window.electronAPI.handleWindowFocusChange((event, isFocused) => {
 
 // --- Initialization ---
 // Wait for the DOM to be fully loaded before running the initialization code
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+    await applyTranslations(); // Espera as traduções serem aplicadas
     setupEventListeners();
     updateQueueUI();
     initializePresets();
