@@ -25,10 +25,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   handleProcessingCompleted: (callback) => ipcRenderer.on('processing-completed', callback),
   handleProcessingCancelled: (callback) => ipcRenderer.on('processing-cancelled', callback),
   handleProcessingError: (callback) => ipcRenderer.on('processing-error', callback),
-  handleWindowFocusChange: (callback) => ipcRenderer.on('window-focus-change', callback), // Novo handler
+  handleWindowFocusChange: (callback) => ipcRenderer.on('window-focus-change', callback),
 
   // Canais para Presets e Vídeos
   loadPresets: () => ipcRenderer.invoke('presets:load'),
   savePresets: (presets) => ipcRenderer.send('presets:save', presets),
   getVideoInfo: (filePath) => ipcRenderer.invoke('video:getInfo', filePath),
+
+  // Canal para Atualizações
+  checkForUpdates: () => ipcRenderer.send('check-for-updates'),
 });

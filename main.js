@@ -1,5 +1,6 @@
 // main.js
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -14,6 +15,10 @@ let mainWindow;
 const { FFMPEG, FFPROBE } = ffmpegUtils;
 
 const presetsFilePath = path.join(app.getPath('userData'), 'presets.json');
+
+// Configurações do autoUpdater
+autoUpdater.logger = require("electron-log");
+autoUpdater.logger.transports.file.level = "info";
 
 function getDefaultPresets() {
     return [
@@ -95,7 +100,6 @@ const createWindow = () => {
     });
     mainWindow.loadFile('index.html');
 
-    // Adiciona listeners para os eventos de foco e perda de foco
     mainWindow.on('blur', () => {
         if (mainWindow) {
             mainWindow.webContents.send('window-focus-change', false);
@@ -109,9 +113,40 @@ const createWindow = () => {
     });
 };
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+    createWindow();
+    // Verifica atualizações assim que o app estiver pronto
+    autoUpdater.checkForUpdatesAndNotify();
+});
+
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
+});
+
+// Eventos do autoUpdater
+autoUpdater.on('update-available', () => {
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'Atualização Encontrada',
+    message: 'Uma nova versão do W4ll-E está disponível. O download começará em segundo plano.'
+  });
+});
+
+autoUpdater.on('update-downloaded', () => {
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'Atualização Pronta',
+    message: 'A nova versão foi baixada. Reinicie o aplicativo para aplicar as atualizações.',
+    buttons: ['Reiniciar', 'Mais tarde']
+  }).then((buttonIndex) => {
+    if (buttonIndex.response === 0) {
+      autoUpdater.quitAndInstall();
+    }
+  });
+});
+
+ipcMain.on('check-for-updates', () => {
+    autoUpdater.checkForUpdatesAndNotify();
 });
 
 ipcMain.on('window-close', () => mainWindow.close());
@@ -241,7 +276,7 @@ ipcMain.on('start-processing', async (event, data) => {
                     const barSize = preset.barSize || 0;
                     const contentHeight = preset.height - barSize;
                     const paddingY = Math.floor(barSize / 2);
-                    filter = `scale=${preset.width}:${contentHeight},pad=${preset.width}:${preset.height}:0:${paddingY}:color=black,setsar=1${timeFilter}`;
+                    filter = `scale=${preset.width}:${contentHeight},pad=${preset.width}:${preset.height}:0:0:color=black,setsar=1${timeFilter}`;
                 } else {
                     filter = `scale=${preset.width}:${preset.height},setsar=1${timeFilter}`;
                 }

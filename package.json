@@ -1,15 +1,32 @@
 {
   "name": "w4ll-e-renderer",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Aplicativo de desktop para automatizar a renderização e renomeação de vídeos.",
+  "homepage": "https://github.com/sidneyts/W4ll-e",
   "main": "main.js",
   "scripts": {
     "start": "npx electron .",
     "build": "electron-builder",
+    "publish": "electron-builder --publish always",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Sidney T. Silva",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sidneyts/W4ll-e.git"
+  },
+  "keywords": [
+    "electron",
+    "ffmpeg",
+    "video",
+    "renderer",
+    "automation"
+  ],
+  "dependencies": {
+    "electron-log": "^5.1.2",
+    "electron-updater": "^6.1.1"
+  },
   "devDependencies": {
     "electron": "^28.2.0",
     "electron-builder": "^24.13.3"
@@ -17,6 +34,13 @@
   "build": {
     "appId": "com.stm.w4lle",
     "productName": "W4ll-E",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "sidneyts",
+        "repo": "W4ll-e"
+      }
+    ],
     "files": [
       "main.js",
       "preload.js",

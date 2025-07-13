@@ -30,6 +30,7 @@ const pauseBtn = document.getElementById('pause-btn');
 const cancelBtn = document.getElementById('cancel-btn');
 const logBtn = document.getElementById('log-btn');
 const clearQueueBtn = document.getElementById('clear-queue-btn');
+const checkForUpdatesBtn = document.getElementById('check-for-updates-btn');
 
 // --- Window Controls from HTML ---
 const closeWindowBtn = document.getElementById('close-btn');
@@ -411,20 +412,23 @@ function setupEventListeners() {
 
     // --- Window Controls with Animation ---
     closeWindowBtn.addEventListener('click', (e) => {
-        e.preventDefault(); 
-        appWrapper.classList.add('app-closing'); 
+        e.preventDefault();
+        appWrapper.classList.add('app-closing');
         setTimeout(() => {
             window.electronAPI.closeWindow();
-        }, 200); // Tempo da animação de fechamento
+        }, 200);
     });
 
-    // Ações diretas para minimizar e maximizar, permitindo a animação nativa
     minimizeWindowBtn.addEventListener('click', () => {
         window.electronAPI.minimizeWindow();
     });
     
     maximizeWindowBtn.addEventListener('click', () => {
         window.electronAPI.maximizeWindow();
+    });
+
+    checkForUpdatesBtn.addEventListener('click', () => {
+        window.electronAPI.checkForUpdates();
     });
 
     queueList.addEventListener('click', (event) => {
