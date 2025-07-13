@@ -1,5 +1,7 @@
 # W4ll-E Renderer v2.2.1
 
+https://github.com/sidneyts/W4ll-e/blob/main/assets/Captura%20de%20tela%202025-07-13%20111018.png
+
 **W4ll-E** é um aplicativo de desktop moderno, construído com Electron, projetado para automatizar e simplificar o processo de renderização e renomeação de vídeos e imagens. Ideal para criadores de conteúdo e agências que precisam padronizar mídias em múltiplos formatos de forma rápida e eficiente.
 
 ---
