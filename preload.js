@@ -35,6 +35,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Canal para Atualizações
   checkForUpdates: () => ipcRenderer.send('check-for-updates'),
 
-  // Canal para Traduções
+  // Canais para Traduções e Configurações
   getTranslations: (lng) => ipcRenderer.invoke('get-translations', lng),
+  getSetting: (key) => ipcRenderer.invoke('get-setting', key),
+  setSetting: (key, value) => ipcRenderer.send('set-setting', { key, value }),
 });

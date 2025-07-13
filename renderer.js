@@ -24,6 +24,12 @@ const applyBarCheckbox = document.getElementById('preset-applyBar');
 const barSizeContainer = document.getElementById('bar-size-container');
 const presetsCheckboxList = document.getElementById('presets-checkbox-list');
 
+// Settings Modal
+const settingsBtn = document.getElementById('settings-btn');
+const settingsModal = document.getElementById('settings-modal');
+const settingsModalCloseBtn = document.getElementById('settings-modal-close-btn');
+const languageSelect = document.getElementById('language-select');
+
 // Action Buttons
 const startBtn = document.getElementById('start-btn');
 const pauseBtn = document.getElementById('pause-btn');
@@ -250,13 +256,13 @@ function renderPresetCheckboxes() {
 function renderSavedPresetsList() {
     savedPresetsList.innerHTML = '';
     const newPresetItem = document.createElement('div');
-    newPresetItem.textContent = translations.addNewPreset || '+ Adicionar Novo Preset';
+    newPresetItem.textContent = translations.addNewPreset || '+ Adicionar Predefinição';
     newPresetItem.className = 'saved-preset-item font-bold text-purple-300';
     newPresetItem.addEventListener('click', () => {
         activePresetId = null;
         presetForm.reset();
         barSizeContainer.style.display = 'none';
-        presetFormTitle.textContent = translations.addNewPreset || 'Adicionar Novo Preset';
+        presetFormTitle.textContent = translations.addNewPreset || 'Adicionar Predefinição';
         deletePresetBtn.style.display = 'none';
         document.querySelectorAll('.saved-preset-item.active').forEach(el => el.classList.remove('active'));
         newPresetItem.classList.add('active');
@@ -273,7 +279,7 @@ function renderSavedPresetsList() {
         }
         item.addEventListener('click', () => {
             activePresetId = preset.id;
-            presetFormTitle.textContent = translations.editPreset || 'Editar Preset';
+            presetFormTitle.textContent = translations.editPreset || 'Editar Predefinição';
             document.getElementById('preset-id').value = preset.id;
             document.getElementById('preset-name').value = preset.name;
             document.getElementById('preset-width').value = preset.width;
@@ -298,7 +304,7 @@ function resetPresetForm() {
     activePresetId = null;
     presetForm.reset();
     barSizeContainer.style.display = 'none';
-    presetFormTitle.textContent = translations.addNewPreset || 'Adicionar Novo Preset';
+    presetFormTitle.textContent = translations.addNewPreset || 'Adicionar Predefinição';
     deletePresetBtn.style.display = 'none';
     renderSavedPresetsList();
 }
@@ -522,6 +528,22 @@ function setupEventListeners() {
     });
     applyBarCheckbox.addEventListener('change', (e) => {
         barSizeContainer.style.display = e.target.checked ? 'block' : 'none';
+    });
+    
+    // Settings Modal Listeners
+    settingsBtn.addEventListener('click', async () => {
+        const currentLanguage = await window.electronAPI.getSetting('language') || 'pt';
+        languageSelect.value = currentLanguage;
+        settingsModal.style.display = 'flex';
+    });
+
+    settingsModalCloseBtn.addEventListener('click', () => {
+        settingsModal.style.display = 'none';
+    });
+
+    languageSelect.addEventListener('change', (event) => {
+        const newLanguage = event.target.value;
+        window.electronAPI.setSetting('language', newLanguage);
     });
 }
 

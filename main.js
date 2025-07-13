@@ -6,16 +6,18 @@ const fs = require('fs');
 const os = require('os');
 const { exec } = require('child_process');
 const util = require('util');
-const { i18next, initI18n } = require('./i18n'); // Importa a nova estrutura
+const Store = require('electron-store');
+const { i18next, initI18n } = require('./i18n');
 
 const ffmpegUtils = require('./scripts/ffmpegUtils.js');
 
 const execPromise = util.promisify(exec);
 let mainWindow;
 
+const store = new Store();
+
 const { FFMPEG, FFPROBE } = ffmpegUtils;
 
-// Configurações do autoUpdater
 autoUpdater.logger = require("electron-log");
 autoUpdater.logger.transports.file.level = "info";
 
@@ -89,8 +91,8 @@ function isPresetCompatible(videoInfo, preset) {
 
 const createWindow = () => {
     mainWindow = new BrowserWindow({
-        width: 680, // Largura ainda mais reduzida
-        height: 640, // Altura ainda mais reduzida
+        width: 680,
+        height: 640,
         frame: false,
         transparent: true,
         resizable: true,
@@ -115,7 +117,7 @@ const createWindow = () => {
 };
 
 app.whenReady().then(async () => {
-    await initI18n(); // Espera as traduções serem carregadas
+    await initI18n();
     createWindow();
     autoUpdater.checkForUpdatesAndNotify();
 });
@@ -124,7 +126,6 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
-// Eventos do autoUpdater
 autoUpdater.on('update-available', () => {
   dialog.showMessageBox({
     type: 'info',
@@ -146,11 +147,25 @@ autoUpdater.on('update-downloaded', () => {
   });
 });
 
-// Novo handler para obter as traduções
 ipcMain.handle('get-translations', (event, lng) => {
     const language = lng || i18next.language;
     return i18next.getResourceBundle(language, 'translation');
 });
+
+// IPC para Configurações
+ipcMain.handle('get-setting', (event, key) => {
+    return store.get(key);
+});
+
+ipcMain.on('set-setting', (event, { key, value }) => {
+    store.set(key, value);
+    if (key === 'language') {
+        i18next.changeLanguage(value).then(() => {
+            mainWindow.webContents.reload();
+        });
+    }
+});
+
 
 ipcMain.on('check-for-updates', () => {
     autoUpdater.checkForUpdatesAndNotify();

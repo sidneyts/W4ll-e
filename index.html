@@ -29,21 +29,19 @@
                 
                 <div class="presets-section flex-grow flex flex-col min-h-0">
                     <div class="flex justify-between items-center mb-2 flex-shrink-0">
-                        <h3 class="text-lg font-bold text-white/90" data-i18n-key="presets">Presets</h3>
+                        <h3 class="text-lg font-bold text-white/90" data-i18n-key="presets">Predefinições</h3>
                         <button id="manage-presets-btn" class="text-sm font-semibold text-purple-300 hover:text-purple-200 transition-colors" data-i18n-key="manage">Gerir</button>
                     </div>
                     <div id="presets-checkbox-list" class="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar">
                         <!-- Checkboxes dos presets serão inseridos aqui -->
                     </div>
                 </div>
-
-                <!-- Botão de Atualização -->
-                <div class="mt-auto flex-shrink-0">
-                    <button id="check-for-updates-btn" class="w-full text-sm font-semibold text-white/60 hover:text-white transition-colors py-2 rounded-lg hover:bg-white/10" data-i18n-key="checkForUpdates">
-                        Verificar Atualizações
-                    </button>
-                </div>
             </div>
+
+            <!-- Botão de Configurações movido para cá -->
+            <button id="settings-btn" class="settings-btn" data-i18n-title="settings">
+                <img src="assets/config.svg" class="h-5 w-5" alt="Configurações">
+            </button>
         </aside>
 
         <div id="main-panel" class="flex-grow flex flex-col min-w-0">
@@ -90,18 +88,18 @@
     <div id="presets-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content-lg">
             <span id="presets-modal-close-btn" class="modal-close-btn">&times;</span>
-            <h4 class="mb-4" data-i18n-key="managePresetsTitle">Gerir Presets de Renderização</h4>
+            <h4 class="mb-4" data-i18n-key="managePresetsTitle">Gerir Predefinições de Renderização</h4>
             <div class="flex gap-6 h-full">
                 <div class="w-1/3 border-r border-white/10 pr-6">
-                    <h5 class="font-bold mb-2" data-i18n-key="savedPresets">Presets Salvos</h5>
+                    <h5 class="font-bold mb-2" data-i18n-key="savedPresets">Predefinições Salvas</h5>
                     <div id="saved-presets-list" class="space-y-2 custom-scrollbar pr-2 overflow-y-auto max-h-[400px]"></div>
                 </div>
                 <div class="w-2/3">
-                    <h5 id="preset-form-title" class="font-bold mb-2" data-i18n-key="addNewPreset">Adicionar Novo Preset</h5>
+                    <h5 id="preset-form-title" class="font-bold mb-2" data-i18n-key="addNewPreset">Adicionar Predefinição</h5>
                     <form id="preset-form" class="space-y-3">
                         <input type="hidden" id="preset-id">
                         <div>
-                            <label for="preset-name" class="text-sm font-medium text-white/70" data-i18n-key="presetName">Nome do Preset</label>
+                            <label for="preset-name" class="text-sm font-medium text-white/70" data-i18n-key="presetName">Nome da Predefinição</label>
                             <input type="text" id="preset-name" class="modal-input" required>
                         </div>
                          <div class="grid grid-cols-2 gap-4">
@@ -134,9 +132,32 @@
                         </div>
                         <div class="flex justify-end gap-4 pt-4">
                             <button type="button" id="delete-preset-btn" class="action-btn bg-red-800/80 hover:bg-red-700" style="display: none;" data-i18n-key="delete">Excluir</button>
-                            <button type="submit" class="action-btn main-action-btn" data-i18n-key="savePreset">Salvar Preset</button>
+                            <button type="submit" class="action-btn main-action-btn" data-i18n-key="savePreset">Salvar Predefinição</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Configurações Atualizado -->
+    <div id="settings-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <span id="settings-modal-close-btn" class="modal-close-btn">&times;</span>
+            <h4 data-i18n-key="settings">Configurações</h4>
+            <div class="mt-6 space-y-6">
+                <div class="settings-section">
+                    <label for="language-select" class="block text-sm font-medium text-white/70 mb-2" data-i18n-key="language">Idioma</label>
+                    <select id="language-select" class="modal-input">
+                        <option value="pt" data-i18n-key="portuguese">Português</option>
+                        <option value="en" data-i18n-key="english">Inglês</option>
+                        <option value="es" data-i18n-key="spanish">Espanhol</option>
+                    </select>
+                </div>
+                <div class="settings-section border-t border-white/10 pt-6">
+                    <button id="check-for-updates-btn" class="w-full action-btn bg-white/10" data-i18n-key="checkForUpdates">
+                        Verificar Atualizações
+                    </button>
                 </div>
             </div>
         </div>
