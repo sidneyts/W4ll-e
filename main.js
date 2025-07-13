@@ -89,8 +89,8 @@ function isPresetCompatible(videoInfo, preset) {
 
 const createWindow = () => {
     mainWindow = new BrowserWindow({
-        width: 720, // Largura reduzida para FullHD
-        height: 680, // Altura reduzida para FullHD
+        width: 680, // Largura ainda mais reduzida
+        height: 640, // Altura ainda mais reduzida
         frame: false,
         transparent: true,
         resizable: true,
