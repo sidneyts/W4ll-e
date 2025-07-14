@@ -6,10 +6,9 @@ const FfmpegService = require('./FfmpegService');
 const RenameService = require('./RenameService');
 
 // --- Configuração da Fila ---
-// Limita a 2 processos ffmpeg simultâneos para não sobrecarregar a CPU.
 const queue = new PQueue({ concurrency: 2 });
 
-let mainWindow = null; // Referência à janela principal para enviar eventos
+let mainWindow = null;
 let fullLog = '';
 
 // --- Funções de Controle ---
@@ -25,7 +24,7 @@ function resume() {
 }
 
 function cancel() {
-    queue.clear(); // Limpa todas as tarefas pendentes
+    queue.clear();
     appendToLog('[FILA] Processamento cancelado pelo usuário.');
     if (mainWindow) {
         mainWindow.webContents.send('processing-cancelled');
@@ -38,10 +37,9 @@ function appendToLog(message) {
     fullLog += message + '\n';
 }
 
-// --- Lógica de Compatibilidade ---
+// --- Lógica de Compatibilidade (ATUALIZADA) ---
 /**
  * Verifica se um preset é compatível com as informações de um vídeo.
- * A tolerância é de 20% para a proporção e 2 segundos para a duração.
  * @param {object} videoInfo - Informações do vídeo de origem { width, height, duration }.
  * @param {object} preset - O objeto do preset.
  * @returns {boolean} - Retorna true se for compatível.
@@ -50,12 +48,19 @@ function isPresetCompatible(videoInfo, preset) {
     if (!videoInfo) return false;
     const sourceRatio = videoInfo.width / videoInfo.height;
     const presetRatio = preset.width / preset.height;
+    
+    // Usa a tolerância de proporção do preset, com um fallback para o valor antigo (0.2 ou 20%).
+    const ratioTolerance = preset.ratioTolerance !== undefined ? preset.ratioTolerance : 0.2;
     const ratioDiff = Math.abs(sourceRatio - presetRatio);
-    const timeDiff = Math.abs(videoInfo.duration - preset.duration);
+    const ratioIsCompatible = ratioDiff <= ratioTolerance;
 
-    // Tolerância de 20% para proporção e 2s para duração
-    return ratioDiff <= 0.2 && timeDiff <= 2;
+    // Se o preset não tiver limite de tempo, a verificação de duração é ignorada.
+    // A tolerância de tempo permanece fixa em 2s se não estiver usando a duração original.
+    const timeIsCompatible = preset.useOriginalDuration || (Math.abs(videoInfo.duration - preset.duration) <= 2);
+
+    return ratioIsCompatible && timeIsCompatible;
 }
+
 
 /**
  * Inicia o processamento da fila de vídeos.
@@ -64,7 +69,7 @@ function isPresetCompatible(videoInfo, preset) {
  */
 async function start(data, win) {
     mainWindow = win;
-    fullLog = ''; // Reseta o log a cada nova fila
+    fullLog = '';
     const { videos, clientName, selectedPresets } = data;
 
     if (videos.length === 0 || selectedPresets.length === 0) {
@@ -83,12 +88,10 @@ async function start(data, win) {
         await FileService.ensureDirExists(tempDir);
         appendToLog(`[FILA] Ambiente de trabalho definido como: ${workDir}`);
 
-        // Adiciona cada vídeo à fila de processamento
         for (const video of videos) {
             queue.add(() => processVideo(video, { antigosDir, tempDir, workDir, clientName, selectedPresets, filesToDelete }));
         }
 
-        // Quando a fila estiver vazia, finaliza o processo
         await queue.onIdle();
         appendToLog('\n[FILA] ✅ Processamento da fila concluído!');
 
@@ -119,7 +122,6 @@ async function processVideo(video, { antigosDir, tempDir, workDir, clientName, s
     appendToLog(`\n--- INICIANDO: ${path.basename(video.path)} ---`);
 
     try {
-        // 1. Mover arquivo original
         const sourceFileName = path.basename(video.path);
         const newSourcePath = path.join(antigosDir, sourceFileName);
         await FileService.moveFile(video.path, newSourcePath);
@@ -128,7 +130,6 @@ async function processVideo(video, { antigosDir, tempDir, workDir, clientName, s
         let sourceForProcessing = newSourcePath;
         const fileExt = path.extname(newSourcePath).toLowerCase();
 
-        // 2. Se for imagem, cria um vídeo temporário
         if (['.jpg', '.jpeg', '.png'].includes(fileExt)) {
             const tempVideoPath = path.join(tempDir, `${path.parse(sourceFileName).name}_temp.mp4`);
             filesToDelete.add(tempVideoPath);
@@ -136,17 +137,15 @@ async function processVideo(video, { antigosDir, tempDir, workDir, clientName, s
             await FfmpegService.renderVideo({
                 inputPath: newSourcePath,
                 outputPath: tempVideoPath,
-                preset: { width: video.info.width, height: video.info.height, duration: 10 },
+                preset: { width: video.info.width, height: video.info.height, duration: 10, useOriginalDuration: false },
                 onProgress: () => {},
             });
             sourceForProcessing = tempVideoPath;
             video.info.duration = 10.0;
         }
 
-        // 3. Renderiza para cada preset selecionado
         let presetsRendered = 0;
         for (const preset of selectedPresets) {
-            // CORREÇÃO: Verifica a compatibilidade antes de renderizar.
             if (!isPresetCompatible(video.info, preset)) {
                 appendToLog(`     - ℹ️ PULANDO PRESET (incompatível): ${preset.name}`);
                 continue;
@@ -167,7 +166,6 @@ async function processVideo(video, { antigosDir, tempDir, workDir, clientName, s
                 },
             });
 
-            // 4. Renomeia o arquivo final
             const finalName = await RenameService.renameOutputFile(tempOutputPath, preset, clientName);
             appendToLog(`       - RENOMEADO PARA: ${finalName}`);
         }

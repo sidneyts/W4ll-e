@@ -11,12 +11,26 @@ async function addFilesToQueue(filePaths) {
     if (!filePaths || filePaths.length === 0) return;
     const uniquePaths = filePaths.filter(path => !state.videoQueue.some(v => v.path === path));
     
+    // 1. Adiciona os arquivos à fila com um estado de "carregando" (info: null)
     for (const path of uniquePaths) {
-        const info = await window.electronAPI.getVideoInfo(path);
-        if (info) {
-            state.videoQueue.push({ path: path, status: 'pending', error: null, info: info, progress: 0 });
-        }
+        state.videoQueue.push({ path: path, status: 'pending', error: null, info: null, progress: 0 });
     }
+    // 2. Atualiza a UI imediatamente para mostrar os arquivos sendo carregados
+    ui.updateQueueUI();
+
+    // 3. Busca as informações de todos os novos arquivos de forma concorrente
+    const infoPromises = uniquePaths.map(path => window.electronAPI.getVideoInfo(path));
+    const infos = await Promise.all(infoPromises);
+
+    // 4. Atualiza o estado da fila com as informações obtidas
+    uniquePaths.forEach((path, index) => {
+        const video = state.videoQueue.find(v => v.path === path);
+        if (video && infos[index]) {
+            video.info = infos[index];
+        }
+    });
+
+    // 5. Renderiza a UI novamente com as informações completas nos tooltips
     ui.updateQueueUI();
     ui.updatePresetAvailability();
 }

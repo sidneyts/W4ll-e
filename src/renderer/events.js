@@ -39,14 +39,10 @@ export function initEventListeners() {
 
     // Ações da Fila
     dom.startBtn.addEventListener('click', () => {
+        // Apenas marca os vídeos como pendentes, não atualiza a UI inteira
         state.videoQueue.forEach(v => {
-            if (v.status !== 'completed') {
-                v.status = 'pending';
-                v.error = null;
-                v.progress = 0;
-            }
+            if (v.status !== 'completed') { v.status = 'pending'; v.error = null; v.progress = 0; }
         });
-        ui.updateQueueUI();
         
         const selectedPresetIds = Array.from(dom.presetsCheckboxList.querySelectorAll('input:checked')).map(input => input.value);
         const selectedPresets = state.presets.filter(p => selectedPresetIds.includes(p.id));
@@ -56,6 +52,7 @@ export function initEventListeners() {
             state.setIsProcessing(true);
             state.setIsPaused(false);
             state.setFinalLogContent('');
+            ui.updateQueueUI(); // Atualiza a UI para mostrar o estado de "processando"
             ui.updateButtonsState();
             const clientName = dom.clientNameInput.value.trim();
             window.electronAPI.startQueue({ videos: pendingVideos, clientName: clientName, selectedPresets: selectedPresets });
@@ -78,8 +75,6 @@ export function initEventListeners() {
     });
 
     // --- MODAIS ---
-
-    // Abertura dos modais
     dom.logBtn.addEventListener('click', () => {
         dom.logOutput.textContent = state.finalLogContent;
         dom.logModal.style.display = 'flex';
@@ -95,7 +90,6 @@ export function initEventListeners() {
         dom.settingsModal.style.display = 'flex';
     });
 
-    // Fechamento dos modais (botão 'X')
     dom.closeModalBtn.addEventListener('click', () => { dom.logModal.style.display = 'none'; });
     dom.presetsModalCloseBtn.addEventListener('click', () => { dom.presetsModal.style.display = 'none'; });
     dom.settingsModalCloseBtn.addEventListener('click', () => { dom.settingsModal.style.display = 'none'; });
@@ -115,11 +109,10 @@ export function initEventListeners() {
     dom.minimizeWindowBtn.addEventListener('click', () => window.electronAPI.minimizeWindow());
     dom.maximizeWindowBtn.addEventListener('click', () => window.electronAPI.maximizeWindow());
 
-    // Ações da lista da fila (deletar item)
+    // Ações da lista da fila
     dom.queueList.addEventListener('click', (event) => {
         const button = event.target.closest('.queue-btn');
         if (!button || button.disabled) return;
-        
         const action = button.dataset.action;
         const videoItem = button.closest('.video-item');
         const filePath = videoItem.dataset.path;
@@ -134,19 +127,14 @@ export function initEventListeners() {
         }
     });
 
-    // Drag and Drop (Lista da Fila)
+    // Drag and Drop da Fila
     dom.queueList.addEventListener('dragstart', (e) => {
         if (state.isProcessing) return;
         state.setDraggedItem(e.target.closest('.video-item'));
-        if (state.draggedItem) {
-            setTimeout(() => { state.draggedItem.classList.add('dragging'); }, 0);
-        }
+        if (state.draggedItem) { setTimeout(() => { state.draggedItem.classList.add('dragging'); }, 0); }
     });
     dom.queueList.addEventListener('dragend', () => {
-        if (state.draggedItem) {
-            state.draggedItem.classList.remove('dragging');
-            state.setDraggedItem(null);
-        }
+        if (state.draggedItem) { state.draggedItem.classList.remove('dragging'); state.setDraggedItem(null); }
     });
     dom.queueList.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -154,11 +142,8 @@ export function initEventListeners() {
         const afterElement = getDragAfterElement(dom.queueList, e.clientY);
         const currentlyDragged = document.querySelector('.dragging');
         if (currentlyDragged) {
-            if (afterElement == null) {
-                dom.queueList.appendChild(currentlyDragged);
-            } else {
-                dom.queueList.insertBefore(currentlyDragged, afterElement);
-            }
+            if (afterElement == null) { dom.queueList.appendChild(currentlyDragged); } 
+            else { dom.queueList.insertBefore(currentlyDragged, afterElement); }
         }
     });
     dom.queueList.addEventListener('drop', (e) => {
@@ -176,102 +161,86 @@ export function initEventListeners() {
         ui.updatePresetAvailability();
     });
 
-    // --- Modal de Predefinições (Formulário e Ações) ---
-
-    // Event delegation para clicar em um preset na lista
+    // --- Modal de Predefinições ---
     dom.savedPresetsList.addEventListener('click', (event) => {
         const presetItem = event.target.closest('.saved-preset-item');
         if (!presetItem) return;
-
         const presetId = presetItem.dataset.id;
         const presetToEdit = state.presets.find(p => p.id === presetId);
-        
         if (presetToEdit) {
             ui.populateFormWithPreset(presetToEdit);
+            ui.renderSavedPresetsList(); // Re-renderiza para mostrar o item ativo
         }
     });
 
-    // Salvar (Adicionar ou Editar)
     dom.presetForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = document.getElementById('preset-id').value;
+        
+        const toleranceValue = parseFloat(dom.ratioToleranceInput.value);
+        const finalTolerance = !isNaN(toleranceValue) ? toleranceValue / 100 : 0.2;
+
         const newPresetData = {
-            id: id || `preset_${Date.now()}`, // Usa ID existente ou cria um novo
+            id: id || `preset_${Date.now()}`,
             name: document.getElementById('preset-name').value,
             width: parseInt(document.getElementById('preset-width').value, 10),
             height: parseInt(document.getElementById('preset-height').value, 10),
-            duration: parseInt(document.getElementById('preset-duration').value, 10),
+            duration: parseInt(dom.presetDurationInput.value, 10),
             applyBar: dom.applyBarCheckbox.checked,
             letterbox: document.getElementById('preset-letterbox').checked,
             barSize: parseInt(document.getElementById('preset-barSize').value, 10) || 0,
+            ratioTolerance: finalTolerance,
+            useOriginalDuration: dom.useOriginalDurationCheckbox.checked,
         };
 
-        if (!newPresetData.name.trim()) {
-            alert('O nome da predefinição não pode estar vazio.');
-            return;
-        }
+        if (!newPresetData.name.trim()) { alert('O nome da predefinição não pode estar vazio.'); return; }
 
-        let updatedPresets;
-        if (id) { // Se um ID existe, estamos editando.
-            updatedPresets = state.presets.map(p => p.id === id ? newPresetData : p);
-        } else { // Caso contrário, estamos adicionando um novo.
-            updatedPresets = [...state.presets, newPresetData];
-        }
+        let updatedPresets = id ? state.presets.map(p => p.id === id ? newPresetData : p) : [...state.presets, newPresetData];
         
         state.setPresets(updatedPresets);
         await window.electronAPI.savePresets(state.presets);
         
+        state.setActivePresetId(newPresetData.id);
+        
         ui.renderPresetCheckboxes();
         ui.updatePresetAvailability();
-        ui.resetPresetForm();
+        ui.renderSavedPresetsList();
     });
 
-    // Deletar
     dom.deletePresetBtn.addEventListener('click', async () => {
         const idToDelete = state.activePresetId;
         if (idToDelete && confirm('Tem certeza que deseja excluir esta predefinição?')) {
             state.setPresets(state.presets.filter(p => p.id !== idToDelete));
             await window.electronAPI.savePresets(state.presets);
-            
             ui.renderPresetCheckboxes();
             ui.updatePresetAvailability();
             ui.resetPresetForm();
         }
     });
 
-    // Checkboxes
+    // --- Controles do Formulário de Predefinições ---
     dom.applyBarCheckbox.addEventListener('change', (e) => {
         dom.barSizeContainer.style.display = e.target.checked ? 'block' : 'none';
-        if (e.target.checked) {
-            document.getElementById('preset-letterbox').checked = false;
-        }
+        if (e.target.checked) { document.getElementById('preset-letterbox').checked = false; }
     });
     document.getElementById('preset-letterbox').addEventListener('change', (e) => {
-        if (e.target.checked) {
-            dom.applyBarCheckbox.checked = false;
-            dom.barSizeContainer.style.display = 'none';
-        }
+        if (e.target.checked) { dom.applyBarCheckbox.checked = false; dom.barSizeContainer.style.display = 'none'; }
+    });
+    dom.useOriginalDurationCheckbox.addEventListener('change', (e) => {
+        dom.presetDurationInput.disabled = e.target.checked;
     });
 
-    // --- Ações do Rodapé do Modal de Predefinições ---
+    // --- Ações do Rodapé do Modal ---
     dom.addNewPresetBtn.addEventListener('click', ui.resetPresetForm);
-
     dom.importPresetsBtn.addEventListener('click', async () => {
         const result = await window.electronAPI.importPresets();
-        if (result && !result.success) {
-            alert(result.message || 'Falha ao importar o arquivo.');
-        }
-        // A janela recarrega no sucesso (lógica no main.js)
+        if (result && !result.success) { alert(result.message || 'Falha ao importar o arquivo.'); }
     });
-
     dom.exportPresetsBtn.addEventListener('click', async () => {
-        const result = await window.electronAPI.exportPresets();
-        if (result && result.success) {
-            console.log('Predefinições exportadas com sucesso!');
-        }
+        await window.electronAPI.exportPresets();
     });
     
-    // --- Modal de Configurações (Formulário) ---
+    // --- Modal de Configurações ---
     dom.languageSelect.addEventListener('change', async (event) => {
         await window.electronAPI.setSetting('language', event.target.value);
     });

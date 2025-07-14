@@ -10,6 +10,51 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos do Tooltip */
+        .video-item {
+            position: relative; /* Necessário para o posicionamento absoluto do tooltip */
+        }
+        .video-item .tooltip {
+            visibility: hidden;
+            width: max-content;
+            background-color: #1f2937; /* gray-800 */
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 10;
+            top: 50%; /* Alinha verticalmente ao centro */
+            left: 105%; /* Posiciona à direita do item */
+            transform: translateY(-50%); /* Ajusta o alinhamento vertical */
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            pointer-events: none; /* Impede que o tooltip interfira com o mouse */
+            border: 1px solid #4b5563; /* gray-600 */
+            font-size: 0.8rem;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        /* Seta do Tooltip (apontando para a esquerda) */
+        .video-item .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 100%; /* Posiciona a seta na borda direita do tooltip */
+            margin-top: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent #4b5563 transparent transparent;
+        }
+
+        /* Mostra o tooltip no hover */
+        .video-item:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
 </head>
 <body class="overflow-hidden">
 
@@ -23,46 +68,31 @@
         
         <div id="title-bar" class="w-full h-10 flex-shrink-0 flex items-center px-3 justify-between absolute top-0 left-0 z-20">
             <div class="window-controls-container">
-                <div id="close-btn" class="window-control-btn">
-                    <svg class="icon" viewBox="0 0 12 12"><path d="M2 2 L10 10 M10 2 L2 10"></path></svg>
-                </div>
-                <div id="minimize-btn" class="window-control-btn">
-                    <svg class="icon" viewBox="0 0 12 12"><path d="M2 6 L10 6"></path></svg>
-                </div>
-                <div id="maximize-btn" class="window-control-btn">
-                    <svg class="icon" viewBox="0 0 12 12"><path d="M3 3 L9 3 L9 9 M3 9 L3 3 M6 6 L9 9"></path></svg>
-                </div>
+                <div id="close-btn" class="window-control-btn"><svg class="icon" viewBox="0 0 12 12"><path d="M2 2 L10 10 M10 2 L2 10"></path></svg></div>
+                <div id="minimize-btn" class="window-control-btn"><svg class="icon" viewBox="0 0 12 12"><path d="M2 6 L10 6"></path></svg></div>
+                <div id="maximize-btn" class="window-control-btn"><svg class="icon" viewBox="0 0 12 12"><path d="M3 3 L9 3 L9 9 M3 9 L3 3 M6 6 L9 9"></path></svg></div>
             </div>
             <span class="app-title" data-i18n-key="appTitle">W4ll-E</span>
             <div class="w-20"></div> 
         </div>
 
         <aside id="sidebar" class="sidebar flex-shrink-0 p-4 flex flex-col pt-12">
-            
-            <button id="sidebar-toggle-btn" class="sidebar-btn" data-i18n-title="toggleMenu">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>
-            </button>
-
+            <button id="sidebar-toggle-btn" class="sidebar-btn" data-i18n-title="toggleMenu"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg></button>
             <div class="sidebar-content flex flex-col h-full w-full">
                 <div id="drop-zone" class="w-full h-52 flex-shrink-0 border-2 border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center text-center p-4 cursor-pointer hover:bg-white/5 transition-colors mb-6">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white/50 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                     <p class="text-white font-semibold" data-i18n-key="import">Importar</p>
                     <p class="text-white/60 text-xs mt-1" data-i18n-key="importFormats">(vídeos, imagens ou pastas)</p>
                 </div>
-                
                 <div class="presets-section flex-grow flex flex-col min-h-0">
                     <div class="flex justify-between items-center mb-2 flex-shrink-0">
                         <h3 class="text-lg font-bold text-white/90" data-i18n-key="presets">Predefinições</h3>
                         <button id="manage-presets-btn" class="text-sm font-semibold text-purple-300 hover:text-purple-200 transition-colors" data-i18n-key="manage">Gerir</button>
                     </div>
-                    <div id="presets-checkbox-list" class="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar">
-                    </div>
+                    <div id="presets-checkbox-list" class="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar"></div>
                 </div>
             </div>
-
-            <button id="settings-btn" class="sidebar-btn" data-i18n-title="settings">
-                <img src="../assets/config.svg" class="h-5 w-5" alt="Configurações">
-            </button>
+            <button id="settings-btn" class="sidebar-btn" data-i18n-title="settings"><img src="../assets/config.svg" class="h-5 w-5" alt="Configurações"></button>
         </aside>
 
         <div id="main-panel" class="flex-grow flex flex-col min-w-0 pt-10">
@@ -70,12 +100,9 @@
                 <div class="mb-4 flex-shrink-0">
                     <input type="text" id="client-name" data-i18n-placeholder="clientNamePlaceholder" class="w-full bg-white/10 text-white p-3 rounded-full border-2 border-transparent focus:border-white/30 focus:outline-none transition-all">
                 </div>
-                
                 <div class="flex-grow bg-black bg-opacity-20 rounded-2xl p-4 flex flex-col overflow-hidden">
-                    <div id="queue-list" class="flex-grow space-y-3 overflow-y-auto custom-scrollbar pr-3">
-                    </div>
+                    <div id="queue-list" class="flex-grow space-y-3 overflow-y-auto custom-scrollbar pr-3"></div>
                 </div>
-
                 <div id="action-buttons" class="flex items-center justify-center gap-4 flex-shrink-0 pt-6">
                     <button id="clear-queue-btn" class="action-btn bg-white/10" style="display: none;" data-i18n-key="clearQueue">Limpar Fila</button>
                     <button id="log-btn" class="action-btn bg-white/10" style="display: none;" data-i18n-key="viewLog">Ver Log</button>
@@ -102,7 +129,6 @@
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
                 <h4 class="text-xl font-bold" data-i18n-key="managePresetsTitle">Gerir Predefinições</h4>
             </div>
-
             <div class="flex gap-6 flex-grow min-h-0">
                 <div class="w-1/3 border-r border-white/10 pr-6 flex flex-col">
                     <h5 class="font-bold mb-2 flex-shrink-0" data-i18n-key="savedPresets">Predefinições Salvas</h5>
@@ -126,11 +152,21 @@
                                 <input type="number" id="preset-height" class="modal-input" required>
                             </div>
                         </div>
-                        <div>
-                            <label for="preset-duration" class="text-sm font-medium text-white/70" data-i18n-key="duration">Duração (s)</label>
-                            <input type="number" id="preset-duration" class="modal-input" required>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="preset-duration" class="text-sm font-medium text-white/70" data-i18n-key="duration">Duração (s)</label>
+                                <input type="number" id="preset-duration" class="modal-input" required>
+                            </div>
+                            <div>
+                                <label for="preset-ratioTolerance" class="text-sm font-medium text-white/70">Tolerância Proporção (%)</label>
+                                <input type="number" id="preset-ratioTolerance" class="modal-input" value="20" step="1" min="0" max="100">
+                            </div>
                         </div>
                         <div class="flex items-center gap-4 pt-2">
+                            <div class="flex items-center">
+                               <input id="preset-useOriginalDuration" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                               <label for="preset-useOriginalDuration" class="ml-2 block text-sm text-white/90">Usar Duração Original</label>
+                           </div>
                              <div class="flex items-center">
                                 <input id="preset-applyBar" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
                                 <label for="preset-applyBar" class="ml-2 block text-sm text-white/90" data-i18n-key="applyBlackBar">Aplicar Barra Preta</label>
@@ -151,8 +187,6 @@
                     </form>
                 </div>
             </div>
-            
-            <!-- NOVO: Rodapé do Modal com Ações -->
             <footer class="flex justify-between items-center mt-6 pt-4 border-t border-white/10 flex-shrink-0">
                 <div class="flex gap-4">
                     <button id="import-presets-btn" class="action-btn bg-white/10">Importar</button>
@@ -177,9 +211,7 @@
                     </select>
                 </div>
                 <div class="settings-section border-t border-white/10 pt-6">
-                    <button id="check-for-updates-btn" class="w-full action-btn bg-white/10" data-i18n-key="checkForUpdates">
-                        Verificar Atualizações
-                    </button>
+                    <button id="check-for-updates-btn" class="w-full action-btn bg-white/10" data-i18n-key="checkForUpdates">Verificar Atualizações</button>
                 </div>
             </div>
         </div>
