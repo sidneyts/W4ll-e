@@ -2,7 +2,7 @@
   "appTitle": "W4ll-E",
   "toggleMenu": "Toggle menu",
   "import": "Import",
-  "importFormats": "(mp4, mov, mkv, avi, webm, jpg, jpeg, png)",
+  "importFormats": "(videos, images or folders)",
   "presets": "Presets",
   "manage": "Manage",
   "clientNamePlaceholder": "Client Name",
@@ -16,7 +16,7 @@
   "fullLogTitle": "Full Process Log",
   "managePresetsTitle": "Manage Render Presets",
   "savedPresets": "Saved Presets",
-  "addNewPreset": "Add New Preset",
+  "addNewPreset": "Add Preset",
   "editPreset": "Edit Preset",
   "presetName": "Preset Name",
   "width": "Width (px)",
@@ -27,5 +27,10 @@
   "blackBarSize": "Black Bar Size (px)",
   "delete": "Delete",
   "savePreset": "Save Preset",
-  "checkForUpdates": "Check for Updates"
+  "checkForUpdates": "Check for Updates",
+  "settings": "Settings",
+  "language": "Language",
+  "portuguese": "Portuguese",
+  "english": "English",
+  "spanish": "Spanish"
 }

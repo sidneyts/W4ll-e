@@ -1,3 +1,5 @@
+/* src/renderer/style.css */
+
 /* --- Configurações Globais e Fontes --- */
 body {
     font-family: 'Inter', sans-serif;
@@ -7,99 +9,126 @@ body {
 
 /* --- Animação de Fechamento --- */
 @keyframes fadeOut {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0;
-    }
+    from { opacity: 1; }
+    to { opacity: 0; }
 }
 
 /* --- Layout Principal e Fundo --- */
 #app-wrapper {
-    background: radial-gradient(ellipse at center, rgba(126, 34, 196, 0.6) 0%, rgb(73, 12, 92) 100%), #691180;
+    background-color: #1a0828;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: filter 0.4s ease-in-out;
     filter: grayscale(0);
 }
+#app-wrapper.app-blurred { filter: grayscale(1); }
+#app-wrapper.app-closing { animation: fadeOut 0.2s ease-out forwards; }
 
-#app-wrapper.app-blurred {
-    filter: grayscale(1);
+/* --- Efeito de Fundo Aurora Boreal (CORRIGIDO) --- */
+.aurora-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    filter: blur(120px) opacity(0.4); /* Aumentei o blur e ajustei a opacidade para um efeito mais suave */
 }
 
-#app-wrapper.app-closing {
-    animation: fadeOut 0.2s ease-out forwards;
+.aurora-shape {
+    position: absolute;
+    border-radius: 50%;
+    /* CORREÇÃO: Adiciona uma dica de otimização para o navegador, forçando a animação a ser processada pela GPU. */
+    will-change: transform;
 }
 
-#main-panel {
-    -webkit-app-region: drag;
+/* Velocidade das animações */
+.shape-1 {
+    width: 500px;
+    height: 500px;
+    background-color: #7e22ce; /* Roxo principal */
+    top: -10%;
+    left: -10%;
+    animation: move1 5s infinite alternate ease-in-out;
+}
+
+.shape-2 {
+    width: 450px;
+    height: 450px;
+    background-color: #5f0364; /* Roxo mais escuro (cor que você alterou) */
+    bottom: -5%;
+    right: -15%;
+    animation: move2 2s infinite alternate ease-in-out;
+}
+
+.shape-3 {
+    width: 400px;
+    height: 400px;
+    background-color: #c084fc; /* Roxo mais claro */
+    bottom: 10%;
+    left: 20%;
+    animation: move3 8s infinite alternate ease-in-out;
+}
+
+/* Animações refinadas para um movimento mais orgânico e menos repetitivo */
+@keyframes move1 {
+    from { transform: translate(0, 0) rotate(0deg) scale(1); }
+    to { transform: translate(150px, 200px) rotate(60deg) scale(1.2); }
+}
+@keyframes move2 {
+    from { transform: translate(0, 0) rotate(0deg) scale(1.1); }
+    to { transform: translate(-200px, -100px) rotate(-45deg) scale(1); }
+}
+@keyframes move3 {
+    from { transform: translate(0, 0) rotate(0deg) scale(1); }
+    to { transform: translate(100px, -200px) rotate(-70deg) scale(0.9); }
+}
+
+/* --- Conteúdo Principal (Sidebar e Main Panel) --- */
+#sidebar, #main-panel {
+    position: relative;
+    z-index: 1;
+    background-color: transparent;
 }
 
 /* --- Sidebar e Lógica de Retração --- */
 .sidebar {
     width: 280px;
-    overflow: hidden;
     transition: width 0.4s ease-in-out;
-    position: relative;
-    /* O padding é controlado pelo p-6 do Tailwind no HTML */
+    gap: 1rem;
 }
 .sidebar-content {
     opacity: 1;
     transition: opacity 0.3s ease-in-out;
+    flex-grow: 1;
+    min-height: 0;
 }
 #app-wrapper.sidebar-retracted .sidebar {
     width: 72px;
+    justify-content: space-between;
 }
 #app-wrapper.sidebar-retracted .sidebar-content {
-    opacity: 0;
-    pointer-events: none;
+    display: none;
 }
 
-/* Botão de Toggle da Sidebar */
-.sidebar-toggle-btn {
-    position: absolute;
-    top: 1.5rem; /* Alinhado com p-6 (24px) */
-    right: 1.5rem; /* Alinhado com p-6 (24px) */
+.sidebar-btn {
+    flex-shrink: 0;
     width: 2.5rem;
     height: 2.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 9999px;
+    border-radius: 0.75rem;
     background-color: rgba(255, 255, 255, 0.05);
     color: rgba(255, 255, 255, 0.7);
     transition: background-color 0.2s;
     -webkit-app-region: no-drag;
-}
-.sidebar-toggle-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-.sidebar-toggle-btn svg {
-    width: 1.25rem;
-    height: 1.25rem;
-}
-
-/* Novo Botão de Configurações */
-.settings-btn {
-    position: absolute;
-    bottom: 1.5rem; /* Alinhado com p-6 (24px) */
-    left: 1.5rem; /* Alinhado com p-6 (24px) */
-    width: 2.5rem;
-    height: 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 9999px;
-    background-color: rgba(255, 255, 255, 0.05);
-    transition: background-color 0.2s;
-    -webkit-app-region: no-drag;
     cursor: pointer;
 }
-.settings-btn:hover {
+.sidebar-btn:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
-.settings-btn img {
+.sidebar-btn svg, .sidebar-btn img {
     width: 1.25rem;
     height: 1.25rem;
 }
@@ -108,15 +137,71 @@ body {
 #title-bar { -webkit-app-region: drag; height: 2.5rem; padding-left: 0.75rem; padding-right: 0.75rem; }
 .app-title { font-weight: 600; color: rgba(255, 255, 255, 0.8); }
 .window-controls-container { display: flex; gap: 0.5rem; }
+
+/* --- BOTÕES DE CONTROLE DE JANELA --- */
 .window-control-btn {
-    width: 0.75rem;
-    height: 0.75rem;
+    width: 0.8rem;
+    height: 0.8rem;
     border-radius: 9999px;
     cursor: pointer;
     -webkit-app-region: no-drag;
     transition: transform 0.2s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .window-control-btn:hover { transform: scale(1.1); }
+
+#close-btn { background-color: #ff5f57; }
+#minimize-btn { background-color: #ffbd2e; }
+#maximize-btn { background-color: #28c940; }
+
+#close-btn::before, #close-btn::after,
+#minimize-btn::before,
+#maximize-btn::before, #maximize-btn::after {
+    content: '';
+    position: absolute;
+    background-color: #4d0000;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+#title-bar:hover .window-control-btn::before,
+#title-bar:hover .window-control-btn::after {
+    opacity: 1;
+}
+
+#close-btn::before, #close-btn::after {
+    width: 8px;
+    height: 2px;
+}
+#close-btn::before { transform: rotate(45deg); }
+#close-btn::after { transform: rotate(-45deg); }
+
+#minimize-btn::before {
+    width: 8px;
+    height: 2px;
+}
+
+#maximize-btn::before, #maximize-btn::after {
+    width: 6px;
+    height: 6px;
+    background-color: transparent;
+    border: 1px solid #003e00;
+}
+#maximize-btn::before {
+    border-right: none;
+    border-bottom: none;
+    top: 3px;
+    left: 3px;
+}
+#maximize-btn::after {
+    border-left: none;
+    border-top: none;
+    bottom: 3px;
+    right: 3px;
+}
 
 /* --- Estilos Específicos para Windows --- */
 .platform-win32 #title-bar { flex-direction: row-reverse; }
@@ -248,8 +333,19 @@ body {
 
 /* --- Modais --- */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); }
-.modal-content, .modal-content-lg { background: #1e1b4b; padding: 24px; border-radius: 1rem; display: flex; flex-direction: column; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); }
-.modal-content { width: 90%; max-width: 500px; height: auto; }
+/* CORREÇÃO: Adicionada altura máxima para evitar que os modais estourem a tela */
+.modal-content, .modal-content-lg {
+    background: #1e1b4b;
+    padding: 24px;
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.2);
+    max-height: 90vh; /* Garante que o modal não seja maior que 90% da altura da tela */
+}
+.modal-content { width: 90%; max-width: 500px; }
 .modal-content-lg { width: 90%; max-width: 800px; }
 .modal-close-btn { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; color: rgba(255, 255, 255, 0.7); cursor: pointer; transition: color 0.2s; }
 .modal-close-btn:hover { color: white; }
@@ -300,4 +396,10 @@ body {
     background-position: right 0.7rem center;
     background-size: 1em;
     padding-right: 2.5rem;
+}
+
+#language-select option {
+    background-color: #1e1b4b;
+    color: #e2e8f0;
+    padding: 8px;
 }

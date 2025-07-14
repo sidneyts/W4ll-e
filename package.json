@@ -1,14 +1,13 @@
 {
   "name": "w4ll-e-renderer",
-  "version": "2.3.2",
+  "version": "2.3.0",
   "description": "Aplicativo de desktop para automatizar a renderização e renomeação de vídeos.",
   "homepage": "https://github.com/sidneyts/W4ll-e",
-  "main": "main.js",
+  "main": "src/main/main.js",
   "scripts": {
-    "start": "npx electron .",
+    "start": "electron .",
     "build": "electron-builder",
-    "publish": "electron-builder --publish always",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "publish": "electron-builder --publish always"
   },
   "author": "Sidney T. Silva",
   "license": "ISC",
@@ -28,7 +27,8 @@
     "electron-store": "^8.2.0",
     "electron-updater": "^6.1.1",
     "i18next": "^23.11.5",
-    "i18next-fs-backend": "^2.3.1"
+    "i18next-fs-backend": "^2.3.1",
+    "p-queue": "^6.6.2"
   },
   "devDependencies": {
     "electron": "^28.2.0",
@@ -45,15 +45,8 @@
       }
     ],
     "files": [
-      "main.js",
-      "preload.js",
-      "renderer.js",
-      "index.html",
-      "style.css",
-      "scripts/**/*",
-      "assets/**/*",
-      "i18n.js",
-      "locales/"
+      "src/**/*",
+      "locales/**/*"
     ],
     "extraResources": [
       {
@@ -69,11 +62,11 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "assets/icon.ico"
+      "icon": "src/assets/icon.ico"
     },
     "mac": {
       "target": "dmg",
-      "icon": "assets/icon.icns"
+      "icon": "src/assets/icon.icns"
     },
     "nsis": {
       "oneClick": false,

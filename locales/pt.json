@@ -2,7 +2,7 @@
   "appTitle": "W4ll-E",
   "toggleMenu": "Alternar menu",
   "import": "Importar",
-  "importFormats": "(mp4, mov, mkv, avi, webm, jpg, jpeg, png)",
+  "importFormats": "(vídeos, imagens ou pastas)",
   "presets": "Predefinições",
   "manage": "Gerir",
   "clientNamePlaceholder": "Nome do Cliente",
@@ -27,5 +27,10 @@
   "blackBarSize": "Tamanho da Barra Preta (px)",
   "delete": "Excluir",
   "savePreset": "Salvar Predefinição",
-  "checkForUpdates": "Verificar Atualizações"
+  "checkForUpdates": "Verificar Atualizações",
+  "settings": "Configurações",
+  "language": "Idioma",
+  "portuguese": "Português",
+  "english": "Inglês",
+  "spanish": "Espanhol"
 }
