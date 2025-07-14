@@ -9,11 +9,9 @@ const { app } = require('electron');
  * Retorna uma promessa que resolve quando a inicialização está completa.
  */
 const initI18n = () => {
-  // Determina o caminho para a pasta 'locales' de forma robusta,
-  // funcionando tanto em desenvolvimento quanto com o app empacotado.
-  const localesPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'locales')
-    : path.join(app.getAppPath(), 'locales');
+  // CORREÇÃO: Simplifica a lógica de caminho. app.getAppPath() funciona de forma
+  // fiável tanto em desenvolvimento quanto na aplicação empacotada (aponta para a raiz do app.asar).
+  const localesPath = path.join(app.getAppPath(), 'locales');
 
   return i18next
     .use(FsBackend)
@@ -27,6 +25,8 @@ const initI18n = () => {
       interpolation: {
         escapeValue: false, // Não é necessário para o Electron
       },
+      // Adiciona um log de depuração para ajudar a diagnosticar problemas de carregamento
+      debug: !app.isPackaged, // Ativa o debug apenas em modo de desenvolvimento
     });
 };
 
