@@ -1,10 +1,8 @@
 // src/renderer/ui.js
 
-// Este módulo contém todas as funções que manipulam diretamente a interface (UI).
-
 import * as dom from './dom.js';
 import * as state from './state.js';
-import { createSafeIdForPath } from './utils.js'; // Importa a função utilitária
+import { createSafeIdForPath } from './utils.js';
 
 // --- Funções de Atualização da UI ---
 
@@ -77,6 +75,7 @@ export function updateQueueUI() {
 }
 
 export function updatePresetAvailability() {
+    // Quando a fila está vazia, reseta todos os checkboxes para o estado padrão.
     if (state.videoQueue.length === 0) {
         dom.presetsCheckboxList.querySelectorAll('label').forEach(label => {
             const checkbox = document.getElementById(label.htmlFor);
@@ -91,10 +90,12 @@ export function updatePresetAvailability() {
         return;
     }
 
+    // Quando há itens na fila, verifica a compatibilidade de cada preset.
     state.presets.forEach(preset => {
         const checkbox = document.getElementById(`preset-check-${preset.id}`);
         if (!checkbox) return;
 
+        // Um preset é compatível se pelo menos um vídeo na fila for compatível com ele.
         const isCompatible = state.videoQueue.some(video => {
             if (!video.info) return false;
             const sourceRatio = video.info.width / video.info.height;
@@ -105,18 +106,22 @@ export function updatePresetAvailability() {
         });
 
         const label = checkbox.parentElement;
-        checkbox.disabled = !isCompatible;
         
+        // Se não for compatível, desabilita e desmarca o checkbox.
         if (!isCompatible) {
+            checkbox.disabled = true;
             checkbox.checked = false;
             label.classList.add('disabled');
             label.classList.remove('checked');
             label.title = 'Incompatível com qualquer vídeo na fila.';
         } else {
+            // Se for compatível, apenas o habilita. NÃO altera o estado de 'checked'.
+            // Isso preserva a escolha do usuário de marcar ou desmarcar.
+            checkbox.disabled = false;
             label.classList.remove('disabled');
             label.title = '';
-            checkbox.checked = true;
-            label.classList.add('checked');
+            // Atualiza o estilo visual baseado no estado atual do checkbox (escolha do usuário).
+            label.classList.toggle('checked', checkbox.checked);
         }
     });
     updateButtonsState();
@@ -151,58 +156,56 @@ export function renderPresetCheckboxes() {
     });
 }
 
+/**
+ * Preenche o formulário com os dados de uma predefinição existente.
+ * @param {object} preset - O objeto da predefinição para popular o formulário.
+ */
+export function populateFormWithPreset(preset) {
+    state.setActivePresetId(preset.id);
+    dom.presetFormTitle.textContent = state.translations.editPreset || 'Editar Predefinição';
+    dom.presetForm.querySelector('#preset-id').value = preset.id;
+    dom.presetForm.querySelector('#preset-name').value = preset.name;
+    dom.presetForm.querySelector('#preset-width').value = preset.width;
+    dom.presetForm.querySelector('#preset-height').value = preset.height;
+    dom.presetForm.querySelector('#preset-duration').value = preset.duration;
+    dom.applyBarCheckbox.checked = preset.applyBar || false;
+    dom.presetForm.querySelector('#preset-letterbox').checked = preset.letterbox || false;
+    dom.barSizeContainer.style.display = preset.applyBar ? 'block' : 'none';
+    dom.presetForm.querySelector('#preset-barSize').value = preset.barSize || 0;
+    
+    dom.deletePresetBtn.style.display = 'inline-flex';
+    renderSavedPresetsList(); // Re-renderiza a lista para atualizar o item ativo
+}
+
+/**
+ * Renderiza a lista de predefinições salvas no modal.
+ */
 export function renderSavedPresetsList() {
     dom.savedPresetsList.innerHTML = '';
-    const newPresetItem = document.createElement('div');
-    newPresetItem.textContent = state.translations.addNewPreset || '+ Adicionar Predefinição';
-    newPresetItem.className = 'saved-preset-item font-bold text-purple-300';
-    newPresetItem.addEventListener('click', () => {
-        state.setActivePresetId(null);
-        dom.presetForm.reset();
-        dom.barSizeContainer.style.display = 'none';
-        dom.presetFormTitle.textContent = state.translations.addNewPreset || 'Adicionar Predefinição';
-        dom.deletePresetBtn.style.display = 'none';
-        document.querySelectorAll('.saved-preset-item.active').forEach(el => el.classList.remove('active'));
-        newPresetItem.classList.add('active');
-    });
-    dom.savedPresetsList.appendChild(newPresetItem);
-
+    
     state.presets.forEach(preset => {
         const item = document.createElement('div');
         item.textContent = preset.name;
         item.className = 'saved-preset-item';
         item.dataset.id = preset.id;
+        
         if (preset.id === state.activePresetId) {
             item.classList.add('active');
         }
-        item.addEventListener('click', () => {
-            state.setActivePresetId(preset.id);
-            dom.presetFormTitle.textContent = state.translations.editPreset || 'Editar Predefinição';
-            document.getElementById('preset-id').value = preset.id;
-            document.getElementById('preset-name').value = preset.name;
-            document.getElementById('preset-width').value = preset.width;
-            document.getElementById('preset-height').value = preset.height;
-            document.getElementById('preset-duration').value = preset.duration;
-            dom.applyBarCheckbox.checked = preset.applyBar;
-            document.getElementById('preset-letterbox').checked = preset.letterbox;
-            document.getElementById('preset-barSize').value = preset.barSize || 0;
-            dom.barSizeContainer.style.display = preset.applyBar ? 'block' : 'none';
-            dom.deletePresetBtn.style.display = 'inline-flex';
-            renderSavedPresetsList();
-        });
+        
         dom.savedPresetsList.appendChild(item);
     });
-
-    if (!state.activePresetId) {
-        newPresetItem.classList.add('active');
-    }
 }
 
+/**
+ * Limpa o formulário de predefinições para o estado de "Adicionar Novo".
+ */
 export function resetPresetForm() {
     state.setActivePresetId(null);
     dom.presetForm.reset();
+    document.getElementById('preset-id').value = ''; // Garante que o ID oculto seja limpo
     dom.barSizeContainer.style.display = 'none';
     dom.presetFormTitle.textContent = state.translations.addNewPreset || 'Adicionar Predefinição';
     dom.deletePresetBtn.style.display = 'none';
-    renderSavedPresetsList();
+    renderSavedPresetsList(); // Re-renderiza a lista para remover a seleção ativa
 }

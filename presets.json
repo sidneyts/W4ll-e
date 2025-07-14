@@ -1,0 +1,132 @@
+[
+  {
+    "id": "WFHD",
+    "name": "WIDEFULLHD",
+    "width": 1920,
+    "height": 1080,
+    "duration": 10,
+    "applyBar": true,
+    "letterbox": false,
+    "barSize": 75
+  },
+  {
+    "id": "WIDE",
+    "name": "WIDE",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "applyBar": true,
+    "letterbox": false,
+    "barSize": 75
+  },
+  {
+    "id": "TER",
+    "name": "TER",
+    "width": 1280,
+    "height": 720,
+    "duration": 15,
+    "applyBar": false,
+    "letterbox": false,
+    "barSize": 0
+  },
+  {
+    "id": "BOX",
+    "name": "BOX",
+    "width": 800,
+    "height": 600,
+    "duration": 10,
+    "applyBar": true,
+    "letterbox": false,
+    "barSize": 60
+  },
+  {
+    "id": "VFHD",
+    "name": "VERTFULLHD",
+    "width": 1080,
+    "height": 1920,
+    "duration": 10,
+    "applyBar": true,
+    "letterbox": false,
+    "barSize": 75
+  },
+  {
+    "id": "MUP",
+    "name": "MUP",
+    "width": 1080,
+    "height": 1920,
+    "duration": 10,
+    "applyBar": false,
+    "letterbox": false,
+    "barSize": 0
+  },
+  {
+    "id": "VERT",
+    "name": "VERT",
+    "width": 608,
+    "height": 1080,
+    "duration": 10,
+    "applyBar": true,
+    "letterbox": false,
+    "barSize": 75
+  },
+  {
+    "id": "MUB-FOR-SP",
+    "name": "MUB-FOR-SP",
+    "width": 2048,
+    "height": 720,
+    "duration": 10,
+    "applyBar": false,
+    "letterbox": false,
+    "barSize": 0
+  },
+  {
+    "id": "LED4",
+    "name": "LED4",
+    "width": 864,
+    "height": 288,
+    "duration": 10,
+    "applyBar": false,
+    "letterbox": false,
+    "barSize": 0
+  },
+  {
+    "id": "TOTEMG",
+    "name": "TOTEMG",
+    "width": 960,
+    "height": 1344,
+    "duration": 10,
+    "applyBar": false,
+    "letterbox": false,
+    "barSize": 0
+  },
+  {
+    "id": "WALL",
+    "name": "WALL",
+    "width": 1920,
+    "height": 540,
+    "duration": 10,
+    "applyBar": false,
+    "letterbox": false,
+    "barSize": 0
+  },
+  {
+    "id": "LED",
+    "name": "LED",
+    "width": 3360,
+    "height": 240,
+    "duration": 10,
+    "applyBar": false,
+    "letterbox": false,
+    "barSize": 0
+  },
+  {
+    "id": "SUPERLED",
+    "name": "SUPERLED",
+    "width": 3648,
+    "height": 1152,
+    "duration": 30,
+    "applyBar": false,
+    "letterbox": false,
+    "barSize": 0
+  }
+]

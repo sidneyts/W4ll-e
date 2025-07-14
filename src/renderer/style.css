@@ -24,7 +24,7 @@ body {
 #app-wrapper.app-blurred { filter: grayscale(1); }
 #app-wrapper.app-closing { animation: fadeOut 0.2s ease-out forwards; }
 
-/* --- Efeito de Fundo Aurora Boreal (CORRIGIDO) --- */
+/* --- Efeito de Fundo Aurora Boreal --- */
 .aurora-background {
     position: absolute;
     top: 0;
@@ -32,45 +32,37 @@ body {
     width: 100%;
     height: 100%;
     z-index: 0;
-    filter: blur(120px) opacity(0.4); /* Aumentei o blur e ajustei a opacidade para um efeito mais suave */
+    filter: blur(120px) opacity(0.4);
 }
-
 .aurora-shape {
     position: absolute;
     border-radius: 50%;
-    /* CORREÇÃO: Adiciona uma dica de otimização para o navegador, forçando a animação a ser processada pela GPU. */
     will-change: transform;
 }
-
-/* Velocidade das animações */
 .shape-1 {
     width: 500px;
     height: 500px;
-    background-color: #7e22ce; /* Roxo principal */
+    background-color: #7e22ce;
     top: -10%;
     left: -10%;
-    animation: move1 5s infinite alternate ease-in-out;
+    animation: move1 25s infinite alternate ease-in-out;
 }
-
 .shape-2 {
     width: 450px;
     height: 450px;
-    background-color: #5f0364; /* Roxo mais escuro (cor que você alterou) */
+    background-color: #5f0364;
     bottom: -5%;
     right: -15%;
-    animation: move2 2s infinite alternate ease-in-out;
+    animation: move2 22s infinite alternate ease-in-out;
 }
-
 .shape-3 {
     width: 400px;
     height: 400px;
-    background-color: #c084fc; /* Roxo mais claro */
+    background-color: #c084fc;
     bottom: 10%;
     left: 20%;
-    animation: move3 8s infinite alternate ease-in-out;
+    animation: move3 28s infinite alternate ease-in-out;
 }
-
-/* Animações refinadas para um movimento mais orgânico e menos repetitivo */
 @keyframes move1 {
     from { transform: translate(0, 0) rotate(0deg) scale(1); }
     to { transform: translate(150px, 200px) rotate(60deg) scale(1.2); }
@@ -133,12 +125,25 @@ body {
     height: 1.25rem;
 }
 
-/* --- Barra de Título Customizada --- */
-#title-bar { -webkit-app-region: drag; height: 2.5rem; padding-left: 0.75rem; padding-right: 0.75rem; }
-.app-title { font-weight: 600; color: rgba(255, 255, 255, 0.8); }
-.window-controls-container { display: flex; gap: 0.5rem; }
+/* --- Barra de Título Customizada (MUDANÇA) --- */
+#title-bar {
+    -webkit-app-region: drag;
+    /* O resto do estilo é controlado pelo Tailwind no HTML */
+}
+.app-title {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    /* Permite arrastar a janela pelo título */
+    -webkit-app-region: drag;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.window-controls-container {
+    display: flex;
+    gap: 0.5rem;
+}
 
-/* --- BOTÕES DE CONTROLE DE JANELA --- */
+/* --- BOTÕES DE CONTROLE DE JANELA (MUDANÇA) --- */
 .window-control-btn {
     width: 0.8rem;
     height: 0.8rem;
@@ -146,66 +151,45 @@ body {
     cursor: pointer;
     -webkit-app-region: no-drag;
     transition: transform 0.2s;
-    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .window-control-btn:hover { transform: scale(1.1); }
 
+/* Cores base dos botões */
 #close-btn { background-color: #ff5f57; }
 #minimize-btn { background-color: #ffbd2e; }
 #maximize-btn { background-color: #28c940; }
 
-#close-btn::before, #close-btn::after,
-#minimize-btn::before,
-#maximize-btn::before, #maximize-btn::after {
-    content: '';
-    position: absolute;
-    background-color: #4d0000;
+/* Estilo dos ícones SVG */
+.window-control-btn .icon {
+    width: 8px;
+    height: 8px;
+    stroke: #4d0000;
+    stroke-width: 1.5;
+    fill: none;
     opacity: 0;
     transition: opacity 0.2s;
 }
 
-#title-bar:hover .window-control-btn::before,
-#title-bar:hover .window-control-btn::after {
+/* Mostra os ícones no hover */
+#title-bar:hover .window-control-btn .icon {
     opacity: 1;
 }
 
-#close-btn::before, #close-btn::after {
-    width: 8px;
-    height: 2px;
-}
-#close-btn::before { transform: rotate(45deg); }
-#close-btn::after { transform: rotate(-45deg); }
-
-#minimize-btn::before {
-    width: 8px;
-    height: 2px;
-}
-
-#maximize-btn::before, #maximize-btn::after {
-    width: 6px;
-    height: 6px;
-    background-color: transparent;
-    border: 1px solid #003e00;
-}
-#maximize-btn::before {
-    border-right: none;
-    border-bottom: none;
-    top: 3px;
-    left: 3px;
-}
-#maximize-btn::after {
-    border-left: none;
-    border-top: none;
-    bottom: 3px;
-    right: 3px;
-}
-
 /* --- Estilos Específicos para Windows --- */
-.platform-win32 #title-bar { flex-direction: row-reverse; }
-.platform-win32 .window-controls-container { order: -1; flex-direction: row-reverse; }
+.platform-win32 #title-bar {
+    justify-content: flex-end; /* Alinha tudo à direita */
+}
+.platform-win32 .app-title {
+    order: 1; /* Move o título para o meio */
+    flex-grow: 1;
+    text-align: center;
+}
+.platform-win32 .window-controls-container {
+    order: 2; /* Move os botões para a direita */
+}
 
 /* --- Áreas Não-Arrastáveis --- */
 #drop-zone, #queue-list, #client-name, .action-btn, .modal-overlay, .queue-btn, .drag-handle, .presets-section {

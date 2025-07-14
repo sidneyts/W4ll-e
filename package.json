@@ -46,7 +46,8 @@
     ],
     "files": [
       "src/**/*",
-      "locales/**/*"
+      "locales/**/*",
+      "presets.json"
     ],
     "extraResources": [
       {

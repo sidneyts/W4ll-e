@@ -100,7 +100,6 @@ export function initEventListeners() {
     dom.presetsModalCloseBtn.addEventListener('click', () => { dom.presetsModal.style.display = 'none'; });
     dom.settingsModalCloseBtn.addEventListener('click', () => { dom.settingsModal.style.display = 'none'; });
 
-    // CORREÇÃO: Lógica unificada para fechar qualquer modal ao clicar fora
     window.addEventListener('click', (event) => {
         if (event.target === dom.logModal) dom.logModal.style.display = 'none';
         if (event.target === dom.presetsModal) dom.presetsModal.style.display = 'none';
@@ -177,12 +176,27 @@ export function initEventListeners() {
         ui.updatePresetAvailability();
     });
 
-    // Modal de Presets (Formulário)
+    // --- Modal de Predefinições (Formulário e Ações) ---
+
+    // Event delegation para clicar em um preset na lista
+    dom.savedPresetsList.addEventListener('click', (event) => {
+        const presetItem = event.target.closest('.saved-preset-item');
+        if (!presetItem) return;
+
+        const presetId = presetItem.dataset.id;
+        const presetToEdit = state.presets.find(p => p.id === presetId);
+        
+        if (presetToEdit) {
+            ui.populateFormWithPreset(presetToEdit);
+        }
+    });
+
+    // Salvar (Adicionar ou Editar)
     dom.presetForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = document.getElementById('preset-id').value;
-        const newPreset = {
-            id: id || Date.now().toString(),
+        const newPresetData = {
+            id: id || `preset_${Date.now()}`, // Usa ID existente ou cria um novo
             name: document.getElementById('preset-name').value,
             width: parseInt(document.getElementById('preset-width').value, 10),
             height: parseInt(document.getElementById('preset-height').value, 10),
@@ -191,33 +205,73 @@ export function initEventListeners() {
             letterbox: document.getElementById('preset-letterbox').checked,
             barSize: parseInt(document.getElementById('preset-barSize').value, 10) || 0,
         };
-        const currentPresets = state.presets;
-        const index = currentPresets.findIndex(p => p.id === id);
-        if (index > -1) {
-            currentPresets[index] = newPreset;
-        } else {
-            currentPresets.push(newPreset);
+
+        if (!newPresetData.name.trim()) {
+            alert('O nome da predefinição não pode estar vazio.');
+            return;
         }
-        state.setPresets(currentPresets);
+
+        let updatedPresets;
+        if (id) { // Se um ID existe, estamos editando.
+            updatedPresets = state.presets.map(p => p.id === id ? newPresetData : p);
+        } else { // Caso contrário, estamos adicionando um novo.
+            updatedPresets = [...state.presets, newPresetData];
+        }
+        
+        state.setPresets(updatedPresets);
         await window.electronAPI.savePresets(state.presets);
+        
         ui.renderPresetCheckboxes();
         ui.updatePresetAvailability();
         ui.resetPresetForm();
     });
+
+    // Deletar
     dom.deletePresetBtn.addEventListener('click', async () => {
-        if (state.activePresetId) {
-            state.setPresets(state.presets.filter(p => p.id !== state.activePresetId));
+        const idToDelete = state.activePresetId;
+        if (idToDelete && confirm('Tem certeza que deseja excluir esta predefinição?')) {
+            state.setPresets(state.presets.filter(p => p.id !== idToDelete));
             await window.electronAPI.savePresets(state.presets);
+            
             ui.renderPresetCheckboxes();
             ui.updatePresetAvailability();
             ui.resetPresetForm();
         }
     });
+
+    // Checkboxes
     dom.applyBarCheckbox.addEventListener('change', (e) => {
         dom.barSizeContainer.style.display = e.target.checked ? 'block' : 'none';
+        if (e.target.checked) {
+            document.getElementById('preset-letterbox').checked = false;
+        }
+    });
+    document.getElementById('preset-letterbox').addEventListener('change', (e) => {
+        if (e.target.checked) {
+            dom.applyBarCheckbox.checked = false;
+            dom.barSizeContainer.style.display = 'none';
+        }
+    });
+
+    // --- Ações do Rodapé do Modal de Predefinições ---
+    dom.addNewPresetBtn.addEventListener('click', ui.resetPresetForm);
+
+    dom.importPresetsBtn.addEventListener('click', async () => {
+        const result = await window.electronAPI.importPresets();
+        if (result && !result.success) {
+            alert(result.message || 'Falha ao importar o arquivo.');
+        }
+        // A janela recarrega no sucesso (lógica no main.js)
+    });
+
+    dom.exportPresetsBtn.addEventListener('click', async () => {
+        const result = await window.electronAPI.exportPresets();
+        if (result && result.success) {
+            console.log('Predefinições exportadas com sucesso!');
+        }
     });
     
-    // Modal de Configurações (Formulário)
+    // --- Modal de Configurações (Formulário) ---
     dom.languageSelect.addEventListener('change', async (event) => {
         await window.electronAPI.setSetting('language', event.target.value);
     });

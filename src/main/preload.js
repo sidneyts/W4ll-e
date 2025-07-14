@@ -36,4 +36,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSetting: (key) => ipcRenderer.invoke('get-setting', key),
   setSetting: (key, value) => ipcRenderer.invoke('set-setting', { key, value }),
   checkForUpdates: () => ipcRenderer.send('check-for-updates'),
+
+  // NOVO: Funções de Importar/Exportar
+  importPresets: () => ipcRenderer.invoke('presets:import'),
+  exportPresets: () => ipcRenderer.invoke('presets:export'),
 });

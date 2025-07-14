@@ -39,3 +39,8 @@ export const checkForUpdatesBtn = document.getElementById('check-for-updates-btn
 export const closeWindowBtn = document.getElementById('close-btn');
 export const minimizeWindowBtn = document.getElementById('minimize-btn');
 export const maximizeWindowBtn = document.getElementById('maximize-btn');
+
+// NOVO: Botões de Importar/Exportar
+export const importPresetsBtn = document.getElementById('import-presets-btn');
+export const exportPresetsBtn = document.getElementById('export-presets-btn');
+export const addNewPresetBtn = document.getElementById('add-new-preset-btn');
