@@ -4,6 +4,7 @@ const PQueue = require('p-queue').default;
 const FileService = require('./FileService');
 const FfmpegService = require('./FfmpegService');
 const RenameService = require('./RenameService');
+const { isPresetCompatible } = require('../../shared/compatibility');
 
 // --- Configuração da Fila ---
 const queue = new PQueue({ concurrency: 2 });
@@ -37,31 +38,6 @@ function appendToLog(message) {
     fullLog += message + '\n';
 }
 
-// --- Lógica de Compatibilidade (ATUALIZADA) ---
-/**
- * Verifica se um preset é compatível com as informações de um vídeo.
- * @param {object} videoInfo - Informações do vídeo de origem { width, height, duration }.
- * @param {object} preset - O objeto do preset.
- * @returns {boolean} - Retorna true se for compatível.
- */
-function isPresetCompatible(videoInfo, preset) {
-    if (!videoInfo) return false;
-    const sourceRatio = videoInfo.width / videoInfo.height;
-    const presetRatio = preset.width / preset.height;
-    
-    // Usa a tolerância de proporção do preset, com um fallback para o valor antigo (0.2 ou 20%).
-    const ratioTolerance = preset.ratioTolerance !== undefined ? preset.ratioTolerance : 0.2;
-    const ratioDiff = Math.abs(sourceRatio - presetRatio);
-    const ratioIsCompatible = ratioDiff <= ratioTolerance;
-
-    // Se o preset não tiver limite de tempo, a verificação de duração é ignorada.
-    // A tolerância de tempo permanece fixa em 2s se não estiver usando a duração original.
-    const timeIsCompatible = preset.useOriginalDuration || (Math.abs(videoInfo.duration - preset.duration) <= 2);
-
-    return ratioIsCompatible && timeIsCompatible;
-}
-
-
 /**
  * Inicia o processamento da fila de vídeos.
  * @param {object} data - Dados recebidos da UI.
@@ -70,7 +46,7 @@ function isPresetCompatible(videoInfo, preset) {
 async function start(data, win) {
     mainWindow = win;
     fullLog = '';
-    const { videos, clientName, selectedPresets } = data;
+    const { videos, clientName, selectedPresets, encoderSettings } = data;
 
     if (videos.length === 0 || selectedPresets.length === 0) {
         appendToLog('[FILA] Nenhum vídeo ou preset selecionado.');
@@ -78,66 +54,54 @@ async function start(data, win) {
         return;
     }
 
-    const workDir = path.dirname(videos[0].path);
-    const antigosDir = path.join(workDir, 'Antigos');
-    const tempDir = path.join(workDir, `.w4lle-temp-${Date.now()}`);
-    const filesToDelete = new Set();
+    appendToLog('[FILA] Iniciando processamento...');
+    appendToLog(`   - Configurações de Codificação: Preset=${encoderSettings.encoderPreset}, CRF=${encoderSettings.qualityFactor}`);
 
-    try {
-        await FileService.ensureDirExists(antigosDir);
-        await FileService.ensureDirExists(tempDir);
-        appendToLog(`[FILA] Ambiente de trabalho definido como: ${workDir}`);
 
-        for (const video of videos) {
-            queue.add(() => processVideo(video, { antigosDir, tempDir, workDir, clientName, selectedPresets, filesToDelete }));
-        }
+    for (const video of videos) {
+        queue.add(() => processVideo(video, { clientName, selectedPresets, encoderSettings }));
+    }
 
-        await queue.onIdle();
-        appendToLog('\n[FILA] ✅ Processamento da fila concluído!');
-
-    } catch (error) {
-        appendToLog(`\n[FILA] ❌ ERRO GERAL: Ocorreu uma falha crítica.\n${error.stack}`);
-    } finally {
-        appendToLog('\n--- LIMPANDO ARQUIVOS TEMPORÁRIOS ---');
-        for (const file of filesToDelete) {
-            await FileService.removeItem(file);
-            appendToLog(`   - EXCLUINDO: ${path.basename(file)}`);
-        }
-        await FileService.removeItem(tempDir);
-        appendToLog(`   - EXCLUINDO PASTA TEMPORÁRIA: ${path.basename(tempDir)}`);
-        
-        if (mainWindow) {
-            mainWindow.webContents.send('final-log', fullLog);
-        }
+    await queue.onIdle();
+    appendToLog('\n[FILA] ✅ Processamento da fila concluído!');
+    
+    if (mainWindow) {
+        mainWindow.webContents.send('final-log', fullLog);
     }
 }
 
 /**
  * Processa um único vídeo, movendo-o, renderizando para cada preset e renomeando.
  * @param {object} video - O objeto do vídeo da fila.
- * @param {object} paths - Objeto com os caminhos necessários.
+ * @param {object} options - Opções de processamento { clientName, selectedPresets, encoderSettings }.
  */
-async function processVideo(video, { antigosDir, tempDir, workDir, clientName, selectedPresets, filesToDelete }) {
+async function processVideo(video, { clientName, selectedPresets, encoderSettings }) {
     mainWindow.webContents.send('processing-started', video.path);
     appendToLog(`\n--- INICIANDO: ${path.basename(video.path)} ---`);
 
-    try {
-        const sourceFileName = path.basename(video.path);
-        const newSourcePath = path.join(antigosDir, sourceFileName);
-        await FileService.moveFile(video.path, newSourcePath);
-        appendToLog(`   - MOVENDO: ${sourceFileName} para a pasta "Antigos".`);
+    const workDir = path.dirname(video.path);
+    const antigosDir = path.join(workDir, 'Antigos');
+    const tempDir = path.join(workDir, `.w4lle-temp-${Date.now()}`);
+    const filesToDelete = new Set();
+    let hasSuccessfulRender = false;
 
-        let sourceForProcessing = newSourcePath;
-        const fileExt = path.extname(newSourcePath).toLowerCase();
+    try {
+        await FileService.ensureDirExists(antigosDir);
+        await FileService.ensureDirExists(tempDir);
+
+        const sourceFileName = path.basename(video.path);
+        let sourceForProcessing = video.path;
+        const fileExt = path.extname(video.path).toLowerCase();
 
         if (['.jpg', '.jpeg', '.png'].includes(fileExt)) {
             const tempVideoPath = path.join(tempDir, `${path.parse(sourceFileName).name}_temp.mp4`);
             filesToDelete.add(tempVideoPath);
             appendToLog(`   - CONVERTENDO IMAGEM: Criando vídeo temporário de 10s.`);
             await FfmpegService.renderVideo({
-                inputPath: newSourcePath,
+                inputPath: video.path,
                 outputPath: tempVideoPath,
                 preset: { width: video.info.width, height: video.info.height, duration: 10, useOriginalDuration: false },
+                encoderSettings: { encoderPreset: 'fast', qualityFactor: 23 }, // Usa um padrão para conversão de imagem
                 onProgress: () => {},
             });
             sourceForProcessing = tempVideoPath;
@@ -156,23 +120,37 @@ async function processVideo(video, { antigosDir, tempDir, workDir, clientName, s
             
             preset.sourceDuration = video.info.duration;
 
+            const finalClientName = clientName.trim() || path.parse(sourceFileName).name;
+
             appendToLog(`     - RENDERIZANDO PRESET: ${preset.name}`);
             await FfmpegService.renderVideo({
                 inputPath: sourceForProcessing,
                 outputPath: tempOutputPath,
                 preset: preset,
+                encoderSettings: encoderSettings, // Passa as configurações para o FfmpegService
                 onProgress: (progress) => {
                     mainWindow.webContents.send('progress-update', { videoPath: video.path, progress });
                 },
             });
 
-            const finalName = await RenameService.renameOutputFile(tempOutputPath, preset, clientName);
+            hasSuccessfulRender = true;
+
+            const finalName = await RenameService.renameOutputFile(tempOutputPath, preset, finalClientName);
             appendToLog(`       - RENOMEADO PARA: ${finalName}`);
         }
 
         if (presetsRendered === 0) {
              appendToLog(`   - ⚠️ AVISO: Nenhum preset compatível foi encontrado para este arquivo.`);
         }
+        
+        if (hasSuccessfulRender && !['.jpg', '.jpeg', '.png'].includes(fileExt)) {
+            const newSourcePath = path.join(antigosDir, sourceFileName);
+            await FileService.moveFile(video.path, newSourcePath);
+            appendToLog(`   - MOVENDO ORIGINAL: ${sourceFileName} para a pasta "Antigos".`);
+        } else if (hasSuccessfulRender) {
+             appendToLog(`   - MANTENDO IMAGEM ORIGINAL: ${sourceFileName}.`);
+        }
+
 
         mainWindow.webContents.send('processing-completed', video.path);
         appendToLog(`--- CONCLUÍDO: ${path.basename(video.path)} ---`);
@@ -180,6 +158,11 @@ async function processVideo(video, { antigosDir, tempDir, workDir, clientName, s
     } catch (error) {
         appendToLog(`   - ❌ ERRO ao processar ${path.basename(video.path)}: ${error.message}`);
         mainWindow.webContents.send('processing-error', { videoPath: video.path, error: error.message });
+    } finally {
+        for (const file of filesToDelete) {
+            await FileService.removeItem(file);
+        }
+        await FileService.removeItem(tempDir);
     }
 }
 

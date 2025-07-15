@@ -4,14 +4,15 @@ const FileService = require('./FileService');
 
 /**
  * Gera o nome base para um arquivo de saída com base nas suas propriedades.
- * Esta função substitui a lógica que estava no antigo rename.js.
  * @param {object} preset - O objeto do preset que foi usado para renderizar o vídeo.
- * @param {string} clientName - O nome do cliente fornecido pelo usuário.
+ * @param {string} clientName - O nome do cliente ou o nome do arquivo original.
  * @returns {string} O nome base do arquivo (sem extensão).
  */
 function getBaseOutputName(preset, clientName) {
     const { width, height, duration, applyBar } = preset;
-    const segundos = Math.round(duration);
+    const segundos = Math.round(preset.useOriginalDuration ? preset.sourceDuration : duration);
+    
+    // CORREÇÃO: Usa o clientName diretamente, que já foi tratado no QueueService.
     const sufixoCliente = clientName || 'C';
 
     const date = new Date();
@@ -26,7 +27,6 @@ function getBaseOutputName(preset, clientName) {
     if (width === 1280 && height === 720 && segundos === 15) return `${dateFormatted}_TER_${sufixoCliente}`;
     if (width === 800 && height === 600 && segundos === 10) return `${dateFormatted}_BOX_${sufixoCliente}`;
     if (width === 1080 && height === 1920 && segundos === 10) {
-        // A detecção de barras pretas foi simplificada. Se o preset aplica a barra, usamos o nome correspondente.
         return applyBar ? `${dateFormatted}_VERTFULLHD_${sufixoCliente}` : `${dateFormatted}_MUP_${sufixoCliente}`;
     }
     if (width === 608 && height === 1080 && segundos === 10) return `${dateFormatted}_VERT_${sufixoCliente}`;

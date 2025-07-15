@@ -5,6 +5,8 @@ body {
     font-family: 'Inter', sans-serif;
     background-color: transparent;
     color: #e2e8f0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* --- Animação de Fechamento --- */
@@ -25,286 +27,120 @@ body {
 #app-wrapper.app-closing { animation: fadeOut 0.2s ease-out forwards; }
 
 /* --- Efeito de Fundo Aurora Boreal --- */
-.aurora-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    filter: blur(120px) opacity(0.4);
-}
-.aurora-shape {
-    position: absolute;
-    border-radius: 50%;
-    will-change: transform;
-}
-.shape-1 {
-    width: 500px;
-    height: 500px;
-    background-color: #7e22ce;
-    top: -10%;
-    left: -10%;
-    animation: move1 25s infinite alternate ease-in-out;
-}
-.shape-2 {
-    width: 450px;
-    height: 450px;
-    background-color: #5f0364;
-    bottom: -5%;
-    right: -15%;
-    animation: move2 22s infinite alternate ease-in-out;
-}
-.shape-3 {
-    width: 400px;
-    height: 400px;
-    background-color: #c084fc;
-    bottom: 10%;
-    left: 20%;
-    animation: move3 28s infinite alternate ease-in-out;
-}
-@keyframes move1 {
-    from { transform: translate(0, 0) rotate(0deg) scale(1); }
-    to { transform: translate(150px, 200px) rotate(60deg) scale(1.2); }
-}
-@keyframes move2 {
-    from { transform: translate(0, 0) rotate(0deg) scale(1.1); }
-    to { transform: translate(-200px, -100px) rotate(-45deg) scale(1); }
-}
-@keyframes move3 {
-    from { transform: translate(0, 0) rotate(0deg) scale(1); }
-    to { transform: translate(100px, -200px) rotate(-70deg) scale(0.9); }
-}
+.aurora-background { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; filter: blur(120px) opacity(0.4); }
+.aurora-shape { position: absolute; border-radius: 50%; will-change: transform; }
+.shape-1 { width: 500px; height: 500px; background-color: #7e22ce; top: -10%; left: -10%; animation: move1 25s infinite alternate ease-in-out; }
+.shape-2 { width: 450px; height: 450px; background-color: #5f0364; bottom: -5%; right: -15%; animation: move2 22s infinite alternate ease-in-out; }
+.shape-3 { width: 400px; height: 400px; background-color: #c084fc; bottom: 10%; left: 20%; animation: move3 28s infinite alternate ease-in-out; }
+@keyframes move1 { from { transform: translate(0, 0) rotate(0deg) scale(1); } to { transform: translate(150px, 200px) rotate(60deg) scale(1.2); } }
+@keyframes move2 { from { transform: translate(0, 0) rotate(0deg) scale(1.1); } to { transform: translate(-200px, -100px) rotate(-45deg) scale(1); } }
+@keyframes move3 { from { transform: translate(0, 0) rotate(0deg) scale(1); } to { transform: translate(100px, -200px) rotate(-70deg) scale(0.9); } }
 
 /* --- Conteúdo Principal (Sidebar e Main Panel) --- */
-#sidebar, #main-panel {
-    position: relative;
-    z-index: 1;
-    background-color: transparent;
-}
+#sidebar, #main-panel { position: relative; z-index: 1; background-color: transparent; }
 
 /* --- Sidebar e Lógica de Retração --- */
-.sidebar {
-    width: 280px;
-    transition: width 0.4s ease-in-out;
-    gap: 1rem;
-}
-.sidebar-content {
-    opacity: 1;
-    transition: opacity 0.3s ease-in-out;
-    flex-grow: 1;
-    min-height: 0;
-}
-#app-wrapper.sidebar-retracted .sidebar {
-    width: 72px;
-    justify-content: space-between;
-}
-#app-wrapper.sidebar-retracted .sidebar-content {
-    display: none;
-}
+.sidebar { width: 280px; transition: width 0.4s ease-in-out; gap: 1rem; }
+.sidebar-content { opacity: 1; transition: opacity 0.3s ease-in-out; flex-grow: 1; min-height: 0; }
+#app-wrapper.sidebar-retracted .sidebar { width: 72px; justify-content: space-between; }
+#app-wrapper.sidebar-retracted .sidebar-content { display: none; }
+.sidebar-btn { flex-shrink: 0; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; background-color: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.7); transition: background-color 0.2s; -webkit-app-region: no-drag; cursor: pointer; }
+.sidebar-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
+.sidebar-btn svg, .sidebar-btn img { width: 1.25rem; height: 1.25rem; }
 
-.sidebar-btn {
-    flex-shrink: 0;
-    width: 2.5rem;
-    height: 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.75rem;
-    background-color: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.7);
-    transition: background-color 0.2s;
-    -webkit-app-region: no-drag;
-    cursor: pointer;
-}
-.sidebar-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-.sidebar-btn svg, .sidebar-btn img {
-    width: 1.25rem;
-    height: 1.25rem;
-}
-
-/* --- Barra de Título Customizada (MUDANÇA) --- */
-#title-bar {
-    -webkit-app-region: drag;
-    /* O resto do estilo é controlado pelo Tailwind no HTML */
-}
-.app-title {
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
-    /* Permite arrastar a janela pelo título */
-    -webkit-app-region: drag;
-    -webkit-user-select: none;
-    user-select: none;
-}
-.window-controls-container {
-    display: flex;
-    gap: 0.5rem;
-}
-
-/* --- BOTÕES DE CONTROLE DE JANELA (MUDANÇA) --- */
-.window-control-btn {
-    width: 0.8rem;
-    height: 0.8rem;
-    border-radius: 9999px;
-    cursor: pointer;
-    -webkit-app-region: no-drag;
-    transition: transform 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+/* --- Barra de Título Customizada --- */
+#title-bar { -webkit-app-region: drag; }
+.app-title { font-weight: 600; color: rgba(255, 255, 255, 0.8); -webkit-app-region: drag; -webkit-user-select: none; user-select: none; }
+.window-controls-container { display: flex; gap: 0.5rem; }
+.window-control-btn { width: 0.8rem; height: 0.8rem; border-radius: 9999px; cursor: pointer; -webkit-app-region: no-drag; transition: transform 0.2s; display: flex; align-items: center; justify-content: center; }
 .window-control-btn:hover { transform: scale(1.1); }
-
-/* Cores base dos botões */
 #close-btn { background-color: #ff5f57; }
 #minimize-btn { background-color: #ffbd2e; }
 #maximize-btn { background-color: #28c940; }
-
-/* Estilo dos ícones SVG */
-.window-control-btn .icon {
-    width: 8px;
-    height: 8px;
-    stroke: #4d0000;
-    stroke-width: 1.5;
-    fill: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-/* Mostra os ícones no hover */
-#title-bar:hover .window-control-btn .icon {
-    opacity: 1;
-}
-
-/* --- Estilos Específicos para Windows --- */
-.platform-win32 #title-bar {
-    justify-content: flex-end; /* Alinha tudo à direita */
-}
-.platform-win32 .app-title {
-    order: 1; /* Move o título para o meio */
-    flex-grow: 1;
-    text-align: center;
-}
-.platform-win32 .window-controls-container {
-    order: 2; /* Move os botões para a direita */
-}
+.window-control-btn .icon { width: 8px; height: 8px; stroke: #4d0000; stroke-width: 1.5; fill: none; opacity: 0; transition: opacity 0.2s; }
+#title-bar:hover .window-control-btn .icon { opacity: 1; }
+.platform-win32 #title-bar { justify-content: flex-end; }
+.platform-win32 .app-title { order: 1; flex-grow: 1; text-align: center; }
+.platform-win32 .window-controls-container { order: 2; }
+.platform-win32 #minimize-btn { order: 1; }
+.platform-win32 #maximize-btn { order: 2; }
+.platform-win32 #close-btn { order: 3; }
 
 /* --- Áreas Não-Arrastáveis --- */
-#drop-zone, #queue-list, #client-name, .action-btn, .modal-overlay, .queue-btn, .drag-handle, .presets-section {
-    -webkit-app-region: no-drag;
-}
+#drop-zone, #queue-list, #client-name, .action-btn, .modal-overlay, .queue-btn, .presets-section { -webkit-app-region: no-drag; }
 
-/* --- Fila de Vídeos e Itens --- */
+/* --- Fila de Vídeos e Itens (Layout Compacto) --- */
 .video-item {
     background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     padding: 0.5rem 0.75rem;
     color: white;
     font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    cursor: grab;
+    gap: 0.75rem;
     border: 1px solid transparent;
-    transition: background-color 0.3s, border-color 0.3s;
+    transition: background-color 0.3s, border-color 0.3s, transform 0.2s ease-in-out;
 }
-.video-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+.video-item:not(.dragging) {
+    cursor: grab;
 }
-.video-item.dragging { opacity: 0.5; border-style: dashed; }
+.video-item:hover { background-color: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+.video-item.dragging { opacity: 0.5; background-color: rgba(168, 85, 247, 0.3); border-color: rgba(168, 85, 247, 0.4); cursor: grabbing; }
 .video-item.completed { background-color: rgba(74, 222, 128, 0.1); border-color: rgba(74, 222, 128, 0.3); }
 .video-item.processing { background-color: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); }
-.video-item.error { background-color: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); }
+.video-item.error, .video-item.error-loading { background-color: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); }
 .video-item.error .queue-btn { cursor: pointer; }
 
 .video-item .video-info { flex-grow: 1; min-width: 0; }
-.video-item .file-name { font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.video-item .file-name { font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.video-details-container { display: flex; gap: 0.5rem; margin-top: 2px; }
+.video-detail { font-size: 0.65rem; font-weight: 400; color: rgba(255, 255, 255, 0.5); background-color: rgba(0, 0, 0, 0.2); padding: 1px 5px; border-radius: 4px; }
 
-/* Barra de Progresso */
-.video-item progress {
-    width: 100%;
-    height: 4px;
-    -webkit-appearance: none;
-    appearance: none;
-    border: none;
-    border-radius: 10px;
-    overflow: hidden;
-    margin-top: 0.25rem;
-}
+.video-item progress { width: 100%; height: 3px; -webkit-appearance: none; appearance: none; border: none; border-radius: 10px; overflow: hidden; margin-top: 4px; }
 .video-item progress::-webkit-progress-bar { background-color: rgba(0, 0, 0, 0.3); }
 .video-item progress::-webkit-progress-value { background-image: linear-gradient(to right, #a855f7, #d946ef); transition: width 0.3s ease-in-out; }
 .video-item.completed progress::-webkit-progress-value { background-image: linear-gradient(to right, #22c55e, #4ade80); }
-.video-item.error progress::-webkit-progress-value { background-image: linear-gradient(to right, #ef4444, #f472b6); }
+.video-item.error progress::-webkit-progress-value, .video-item.error-loading progress::-webkit-progress-value { background-image: linear-gradient(to right, #ef4444, #f472b6); }
 
-/* Controles da Fila */
-.drag-handle { color: rgba(255, 255, 255, 0.4); cursor: grab; }
-.drag-handle:active { cursor: grabbing; }
 .queue-controls { display: flex; flex-shrink: 0; }
-.queue-btn {
-    background-color: transparent;
-    border-radius: 9999px;
-    width: 1.75rem;
-    height: 1.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
+.queue-btn { background-color: transparent; border-radius: 9999px; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s; }
 .queue-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
 .queue-btn svg { width: 1rem; height: 1rem; color: rgba(255, 255, 255, 0.6); }
 
-/* --- Seção de Presets (Layout de Lista Ativável) --- */
-.preset-checkbox-label {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s, opacity 0.2s;
-    border: 1px solid transparent;
+/* --- Animação da "Gaveta" de Presets --- */
+#drop-zone {
+    transition: max-height 0.4s ease-in-out, padding-top 0.4s ease-in-out, padding-bottom 0.4s ease-in-out, margin-bottom 0.4s ease-in-out, opacity 0.3s ease-in-out 0.1s;
+    max-height: 10rem;
+    overflow: hidden;
 }
-.preset-checkbox-label:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-.preset-checkbox-label.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background-color: rgba(0, 0, 0, 0.1);
-}
-.preset-checkbox-label input {
-    display: none;
-}
-.preset-checkbox-label span {
-    font-weight: 500;
-    color: #e2e8f0;
-    font-size: 0.875rem;
-}
-.preset-checkbox-label.checked {
-    background-color: #a855f7;
-    border-color: #c084fc;
-    color: white;
-}
-.preset-checkbox-label.checked span {
-    font-weight: 600;
-    color: white;
+.sidebar-content.presets-focused #drop-zone {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    opacity: 0;
+    transition-delay: 0s;
 }
 
-/* --- Botões de Ação Inferiores --- */
-.action-btn {
-    font-weight: 700;
-    padding: 0.6rem 1.5rem;
-    border-radius: 9999px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease-in-out;
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.preset-checkbox-label {
+    display: flex; align-items: center; width: 100%; padding: 0.35rem 0.6rem; background-color: rgba(255, 255, 255, 0.05); border-radius: 0.375rem; transition: all 0.2s; border: 1px solid transparent;
 }
+.preset-checkbox-label:not(.dragging) {
+    cursor: grab;
+}
+.preset-checkbox-label.dragging {
+    opacity: 0.5; background-color: rgba(168, 85, 247, 0.3); border-color: rgba(168, 85, 247, 0.4); cursor: grabbing;
+}
+.preset-checkbox-label:hover { background-color: rgba(255, 255, 255, 0.1); }
+.preset-checkbox-label.disabled { opacity: 0.4; cursor: not-allowed; background-color: rgba(0, 0, 0, 0.1); }
+.preset-checkbox-label input { display: none; }
+.preset-checkbox-label span { font-weight: 500; color: #e2e8f0; font-size: 0.8rem; pointer-events: none; }
+.preset-checkbox-label.checked { background-color: #a855f7; border-color: #c084fc; color: white; }
+.preset-checkbox-label.checked span { font-weight: 600; color: white; }
+
+/* --- Botões de Ação Inferiores --- */
+.action-btn { font-weight: 700; padding: 0.6rem 1.5rem; border-radius: 9999px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.2); transition: all 0.2s ease-in-out; color: white; border: 1px solid rgba(255, 255, 255, 0.1); }
 .action-btn:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2); }
 .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 .main-action-btn { background-image: linear-gradient(to right, #9333ea, #7e22ce); }
@@ -317,73 +153,149 @@ body {
 
 /* --- Modais --- */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); }
-/* CORREÇÃO: Adicionada altura máxima para evitar que os modais estourem a tela */
-.modal-content, .modal-content-lg {
-    background: #1e1b4b;
-    padding: 24px;
-    border-radius: 1rem;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-    border: 1px solid rgba(255,255,255,0.2);
-    max-height: 90vh; /* Garante que o modal não seja maior que 90% da altura da tela */
-}
+.modal-content, .modal-content-lg { background: #1e1b4b; padding: 24px; border-radius: 1rem; display: flex; flex-direction: column; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); max-height: 90vh; }
 .modal-content { width: 90%; max-width: 500px; }
 .modal-content-lg { width: 90%; max-width: 800px; }
 .modal-close-btn { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; color: rgba(255, 255, 255, 0.7); cursor: pointer; transition: color 0.2s; }
 .modal-close-btn:hover { color: white; }
 #log-output { flex-grow: 1; background-color: rgba(0, 0, 0, 0.3); border-radius: 0.5rem; padding: 12px; font-family: 'Courier New', Courier, monospace; font-size: 14px; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; color: #cbd5e1; }
+.modal-input { width: 100%; background-color: rgba(255, 255, 255, 0.1); color: white; padding: 0.4rem 0.6rem; border-radius: 0.5rem; border: 2px solid transparent; transition: all 0.2s; font-size: 0.9rem; }
+.modal-input:focus { outline: none; border-color: rgba(168, 85, 247, 0.7); background-color: rgba(255, 255, 255, 0.15); }
 
-/* Estilos do Modal de Presets */
-.modal-input {
-    width: 100%;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-    padding: 0.4rem 0.6rem;
-    border-radius: 0.5rem;
-    border: 2px solid transparent;
-    transition: all 0.2s;
-    font-size: 0.9rem;
-}
-.modal-input:focus {
-    outline: none;
-    border-color: rgba(168, 85, 247, 0.7);
-    background-color: rgba(255, 255, 255, 0.15);
-}
+/* --- Estilos do Modal de Presets (Reformulado) --- */
 .saved-preset-item {
-    padding: 0.4rem 0.75rem;
+    padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s, transform 0.2s ease-in-out;
 }
-.saved-preset-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+.saved-preset-item:not(.dragging) {
+    cursor: grab;
 }
 .saved-preset-item.active {
     background-color: rgba(168, 85, 247, 0.3);
     color: white;
 }
-#preset-form label {
-    font-size: 0.8rem;
+.saved-preset-item.dragging {
+    opacity: 0.5;
+    background-color: rgba(168, 85, 247, 0.5);
+    cursor: grabbing;
+}
+.saved-preset-item:not(.active):hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Estilos para o Dropdown de Idioma */
-#language-select {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.7rem center;
-    background-size: 1em;
-    padding-right: 2.5rem;
+#preset-form label { font-size: 0.8rem; }
+
+/* --- Estilos para o Toggle Switch --- */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
 }
 
-#language-select option {
-    background-color: #1e1b4b;
-    color: #e2e8f0;
-    padding: 8px;
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.15);
+  transition: .3s;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .slider {
+  background-color: #a855f7;
+  border-color: #c084fc;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* --- Botões do Rodapé e de Ação de Perfis --- */
+.add-preset-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem; /* 36px */
+    height: 2.25rem; /* 36px */
+    border-radius: 9999px; /* Círculo perfeito */
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: background-color 0.2s;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+}
+.add-preset-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+.add-preset-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.modal-footer-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: background-color 0.2s;
+}
+.modal-footer-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+.modal-footer-btn svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+
+/* --- Estilos para Dropdowns Customizados --- */
+#language-select, #encoder-preset-select { 
+    -webkit-appearance: none; 
+    -moz-appearance: none; 
+    appearance: none; 
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); 
+    background-repeat: no-repeat; 
+    background-position: right 0.7rem center; 
+    background-size: 1em; 
+    padding-right: 2.5rem; 
+}
+#language-select option, #encoder-preset-select option { 
+    background-color: #1e1b4b; 
+    color: #e2e8f0; 
+    padding: 8px; 
 }

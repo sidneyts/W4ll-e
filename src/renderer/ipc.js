@@ -1,38 +1,36 @@
 // src/renderer/ipc.js
-
-// Este módulo configura todos os listeners para eventos vindos do processo principal (main).
-
 import * as dom from './dom.js';
 import * as state from './state.js';
 import * as ui from './ui.js';
-import { createSafeIdForPath } from './utils.js'; // Importa a função utilitária
+import { createSafeIdForPath } from './utils.js';
 
 async function addFilesToQueue(filePaths) {
     if (!filePaths || filePaths.length === 0) return;
     const uniquePaths = filePaths.filter(path => !state.videoQueue.some(v => v.path === path));
     
-    // 1. Adiciona os arquivos à fila com um estado de "carregando" (info: null)
     for (const path of uniquePaths) {
-        state.videoQueue.push({ path: path, status: 'pending', error: null, info: null, progress: 0 });
+        state.videoQueue.push({ path: path, status: 'loading', error: null, info: null, progress: 0 });
     }
-    // 2. Atualiza a UI imediatamente para mostrar os arquivos sendo carregados
     ui.updateQueueUI();
 
-    // 3. Busca as informações de todos os novos arquivos de forma concorrente
-    const infoPromises = uniquePaths.map(path => window.electronAPI.getVideoInfo(path));
-    const infos = await Promise.all(infoPromises);
-
-    // 4. Atualiza o estado da fila com as informações obtidas
-    uniquePaths.forEach((path, index) => {
+    const infoPromises = uniquePaths.map(async (path) => {
+        const info = await window.electronAPI.getVideoInfo(path);
         const video = state.videoQueue.find(v => v.path === path);
-        if (video && infos[index]) {
-            video.info = infos[index];
+        if (video) {
+            if (info) {
+                video.info = info;
+                video.status = 'pending';
+            } else {
+                // CORREÇÃO: Define um estado de erro específico para falha na leitura
+                video.status = 'error-loading';
+            }
         }
     });
 
-    // 5. Renderiza a UI novamente com as informações completas nos tooltips
+    await Promise.all(infoPromises);
+
+    // Renderiza a UI novamente com as informações completas ou o estado de erro
     ui.updateQueueUI();
-    ui.updatePresetAvailability();
 }
 
 export function initIpcHandlers() {
@@ -75,7 +73,6 @@ export function initIpcHandlers() {
             }
         });
         ui.updateQueueUI();
-        ui.updateButtonsState();
     });
 
     window.electronAPI.handleProcessingError(({ videoPath, error }) => {
@@ -83,7 +80,7 @@ export function initIpcHandlers() {
         if (video) {
             video.status = 'error';
             video.error = error;
-            video.progress = 100;
+            video.progress = 100; // Marca como "concluído" para mostrar o erro
             ui.updateQueueUI();
         }
     });
@@ -97,5 +94,14 @@ export function initIpcHandlers() {
 
     window.electronAPI.handleWindowFocusChange((isFocused) => {
         dom.appWrapper.classList.toggle('app-blurred', !isFocused);
+    });
+
+    // Handlers para os novos modais customizados
+    window.electronAPI.handleShowAlert(({ titleKey, messageKey }) => {
+        ui.showAlert(titleKey, messageKey);
+    });
+
+    window.electronAPI.handleShowConfirm((options, actionId) => {
+        ui.showConfirm({ ...options, actionId });
     });
 }

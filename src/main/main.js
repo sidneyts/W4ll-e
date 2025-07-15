@@ -6,10 +6,19 @@ const fs = require('fs');
 const Store = require('electron-store');
 const { i18next, initI18n } = require('./i18n');
 const QueueService = require('./services/QueueService');
+const FfmpegService = require('./services/FfmpegService');
+const { isPresetCompatible } = require('../shared/compatibility'); // Importa a lógica compartilhada
 
 app.commandLine.appendSwitch('remote-debugging-port', '9222');
 
-const store = new Store();
+const store = new Store({
+    // Define valores padrão para as novas configurações
+    defaults: {
+        language: 'pt',
+        encoderPreset: 'fast',
+        qualityFactor: 25
+    }
+});
 
 let mainWindow;
 
@@ -19,7 +28,7 @@ autoUpdater.logger.transports.file.level = "info";
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 680,
-        height: 640,
+        height: 720, // Aumentei a altura para acomodar as novas configurações
         frame: false,
         transparent: true,
         resizable: true,
@@ -109,12 +118,19 @@ ipcMain.on('paths-dropped', async (event, paths) => {
     mainWindow.webContents.send('files-selected', expandedFiles);
 });
 
-ipcMain.on('start-processing', (event, data) => QueueService.start(data, mainWindow));
+ipcMain.on('start-processing', (event, data) => {
+    // Busca as configurações de codificação antes de iniciar a fila
+    const encoderSettings = {
+        encoderPreset: store.get('encoderPreset'),
+        qualityFactor: store.get('qualityFactor')
+    };
+    QueueService.start({ ...data, encoderSettings }, mainWindow);
+});
 ipcMain.on('queue-pause', () => QueueService.pause());
 ipcMain.on('queue-resume', () => QueueService.resume());
 ipcMain.on('queue-cancel', () => QueueService.cancel());
 
-// --- Gerenciamento de Presets (Lógica Atualizada com Importar/Exportar) ---
+// --- Gerenciamento de Presets ---
 const userPresetsPath = path.join(app.getPath('userData'), 'presets.json');
 
 ipcMain.handle('presets:load', async () => {  
@@ -143,7 +159,6 @@ ipcMain.handle('presets:save', async (event, presets) => {
     }
 });
 
-// NOVO: Handler para importar predefinições
 ipcMain.handle('presets:import', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
         title: 'Importar Predefinições',
@@ -153,26 +168,24 @@ ipcMain.handle('presets:import', async () => {
     });
 
     if (canceled || filePaths.length === 0) {
-        return { success: false, message: 'Importação cancelada.' };
+        return { success: false, messageKey: 'importCancelled' };
     }
 
     try {
         const filePath = filePaths[0];
         const fileContent = await fs.promises.readFile(filePath, 'utf-8');
-        JSON.parse(fileContent); // Valida se é um JSON válido antes de salvar
+        JSON.parse(fileContent);
         
         await fs.promises.writeFile(userPresetsPath, fileContent);
         
-        // Recarrega a janela para aplicar as novas predefinições
         mainWindow.webContents.reload();
         return { success: true };
     } catch (error) {
         console.error('Falha ao importar predefinições:', error);
-        return { success: false, message: 'O arquivo selecionado não é um JSON válido.' };
+        return { success: false, messageKey: 'importErrorInvalidFile' };
     }
 });
 
-// NOVO: Handler para exportar predefinições
 ipcMain.handle('presets:export', async () => {
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
         title: 'Exportar Predefinições',
@@ -182,7 +195,7 @@ ipcMain.handle('presets:export', async () => {
     });
 
     if (canceled || !filePath) {
-        return { success: false, message: 'Exportação cancelada.' };
+        return { success: false, messageKey: 'exportCancelled' };
     }
 
     try {
@@ -191,42 +204,50 @@ ipcMain.handle('presets:export', async () => {
         return { success: true };
     } catch (error) {
         console.error('Falha ao exportar predefinições:', error);
-        return { success: false, message: 'Falha ao salvar o arquivo.' };
+        return { success: false, messageKey: 'exportError' };
     }
 });
 
-
+// --- Handlers de Serviços e Utilitários ---
 ipcMain.handle('video:getInfo', (event, filePath) => {
-    const FfmpegService = require('./services/FfmpegService');
     return FfmpegService.getVideoInfo(filePath);
 });
 
+ipcMain.handle('util:isPresetCompatible', (event, { videoInfo, preset }) => {
+    return isPresetCompatible(videoInfo, preset);
+});
+
 ipcMain.handle('get-translations', (event, lng) => i18next.getResourceBundle(lng || i18next.language, 'translation'));
+
 ipcMain.handle('get-setting', (event, key) => store.get(key));
+
 ipcMain.handle('set-setting', (event, { key, value }) => {
     store.set(key, value);
     if (key === 'language') {
-        i18next.changeLanguage(value).then(() => mainWindow.webContents.reload());
+        i18next.changeLanguage(value).then(() => {
+            // Recarrega a UI para aplicar o novo idioma em todos os lugares
+            mainWindow.webContents.reload();
+        });
     }
 });
 
+// --- Lógica de Atualização Automática ---
 ipcMain.on('check-for-updates', () => autoUpdater.checkForUpdatesAndNotify());
 
 autoUpdater.on('update-available', () => {
-  dialog.showMessageBox({
-    type: 'info',
-    title: 'Atualização Encontrada',
-    message: 'Uma nova versão do W4ll-E está disponível. O download começará em segundo plano.'
-  });
+  mainWindow.webContents.send('show-alert', { messageKey: 'updateAvailable' });
 });
 
 autoUpdater.on('update-downloaded', () => {
-  dialog.showMessageBox({
-    type: 'info',
-    title: 'Atualização Pronta',
-    message: 'A nova versão foi baixada. Reinicie a aplicação para aplicar as atualizações.',
-    buttons: ['Reiniciar', 'Mais tarde']
-  }).then(({ response }) => {
-    if (response === 0) autoUpdater.quitAndInstall();
-  });
+  mainWindow.webContents.send('show-confirm', {
+    messageKey: 'updateReady',
+    confirmKey: 'restart',
+    cancelKey: 'later'
+  }, 'update-and-restart'); 
+});
+
+ipcMain.on('user-confirmed-action', (event, actionId) => {
+    if (actionId === 'update-and-restart') {
+        autoUpdater.quitAndInstall();
+    }
 });

@@ -27,6 +27,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   handleProcessingCancelled: (callback) => ipcRenderer.on('processing-cancelled', (event, ...args) => callback(...args)),
   handleProcessingError: (callback) => ipcRenderer.on('processing-error', (event, ...args) => callback(...args)),
   handleWindowFocusChange: (callback) => ipcRenderer.on('window-focus-change', (event, ...args) => callback(...args)),
+  
+  // Handlers para Modais Customizados
+  handleShowAlert: (callback) => ipcRenderer.on('show-alert', (event, ...args) => callback(...args)),
+  handleShowConfirm: (callback) => ipcRenderer.on('show-confirm', (event, ...args) => callback(...args)),
+  sendConfirmResult: (actionId) => ipcRenderer.send('user-confirmed-action', actionId),
 
   // Funções de Invocação (Invoke/Handle)
   loadPresets: () => ipcRenderer.invoke('presets:load'),
@@ -36,8 +41,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSetting: (key) => ipcRenderer.invoke('get-setting', key),
   setSetting: (key, value) => ipcRenderer.invoke('set-setting', { key, value }),
   checkForUpdates: () => ipcRenderer.send('check-for-updates'),
-
-  // NOVO: Funções de Importar/Exportar
   importPresets: () => ipcRenderer.invoke('presets:import'),
   exportPresets: () => ipcRenderer.invoke('presets:export'),
+
+  // NOVO: Exposição da função de compatibilidade
+  isPresetCompatible: (videoInfo, preset) => ipcRenderer.invoke('util:isPresetCompatible', { videoInfo, preset }),
 });

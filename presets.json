@@ -7,7 +7,9 @@
     "duration": 10,
     "applyBar": true,
     "letterbox": false,
-    "barSize": 75
+    "barSize": 75,
+    "ratioTolerance": 0.25,
+    "useOriginalDuration": false
   },
   {
     "id": "WIDE",
@@ -27,7 +29,9 @@
     "duration": 15,
     "applyBar": false,
     "letterbox": false,
-    "barSize": 0
+    "barSize": 0,
+    "ratioTolerance": 0.2,
+    "useOriginalDuration": false
   },
   {
     "id": "BOX",
@@ -37,7 +41,9 @@
     "duration": 10,
     "applyBar": true,
     "letterbox": false,
-    "barSize": 60
+    "barSize": 60,
+    "ratioTolerance": 0.15,
+    "useOriginalDuration": false
   },
   {
     "id": "VFHD",
@@ -47,7 +53,9 @@
     "duration": 10,
     "applyBar": true,
     "letterbox": false,
-    "barSize": 75
+    "barSize": 75,
+    "ratioTolerance": 0.05,
+    "useOriginalDuration": false
   },
   {
     "id": "MUP",
@@ -57,7 +65,9 @@
     "duration": 10,
     "applyBar": false,
     "letterbox": false,
-    "barSize": 0
+    "barSize": 0,
+    "ratioTolerance": 0.05,
+    "useOriginalDuration": false
   },
   {
     "id": "VERT",
@@ -67,7 +77,9 @@
     "duration": 10,
     "applyBar": true,
     "letterbox": false,
-    "barSize": 75
+    "barSize": 75,
+    "ratioTolerance": 0.05,
+    "useOriginalDuration": false
   },
   {
     "id": "MUB-FOR-SP",
@@ -77,7 +89,9 @@
     "duration": 10,
     "applyBar": false,
     "letterbox": false,
-    "barSize": 0
+    "barSize": 0,
+    "ratioTolerance": 0.05,
+    "useOriginalDuration": false
   },
   {
     "id": "LED4",
@@ -87,7 +101,9 @@
     "duration": 10,
     "applyBar": false,
     "letterbox": false,
-    "barSize": 0
+    "barSize": 0,
+    "ratioTolerance": 0.05,
+    "useOriginalDuration": false
   },
   {
     "id": "TOTEMG",
@@ -97,7 +113,9 @@
     "duration": 10,
     "applyBar": false,
     "letterbox": false,
-    "barSize": 0
+    "barSize": 0,
+    "ratioTolerance": 0.05,
+    "useOriginalDuration": false
   },
   {
     "id": "WALL",
@@ -107,7 +125,9 @@
     "duration": 10,
     "applyBar": false,
     "letterbox": false,
-    "barSize": 0
+    "barSize": 0,
+    "ratioTolerance": 0.05,
+    "useOriginalDuration": false
   },
   {
     "id": "LED",
@@ -117,7 +137,9 @@
     "duration": 10,
     "applyBar": false,
     "letterbox": false,
-    "barSize": 0
+    "barSize": 0,
+    "ratioTolerance": 0.05,
+    "useOriginalDuration": false
   },
   {
     "id": "SUPERLED",
@@ -127,6 +149,20 @@
     "duration": 30,
     "applyBar": false,
     "letterbox": false,
-    "barSize": 0
+    "barSize": 0,
+    "ratioTolerance": 0.05,
+    "useOriginalDuration": false
+  },
+  {
+    "id": "preset_1752547642500",
+    "name": "TEMBICI",
+    "width": 320,
+    "height": 448,
+    "duration": 10,
+    "applyBar": false,
+    "letterbox": false,
+    "barSize": 0,
+    "ratioTolerance": 0.05,
+    "useOriginalDuration": false
   }
 ]

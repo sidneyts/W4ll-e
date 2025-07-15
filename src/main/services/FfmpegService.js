@@ -3,25 +3,20 @@ const { spawn } = require('child_process');
 const path = require('path');
 const { app } = require('electron');
 const os = require('os');
-const fs = require('fs'); // Importa o módulo 'fs'
+const fs = require('fs');
 
 // --- Configuração dos Binários ---
 
 const isPackaged = app.isPackaged;
 const isWindows = os.platform() === 'win32';
 
-// CORREÇÃO: Constrói o caminho de forma mais robusta para evitar problemas com caracteres especiais.
-// Em desenvolvimento, usa __dirname para navegar a partir da localização do arquivo atual.
-// Quando empacotado, usa process.resourcesPath que é o caminho padrão e seguro.
 const ffmpegPath = isPackaged
   ? path.join(process.resourcesPath, 'ffmpeg')
-  : path.join(__dirname, '..', '..', '..', 'ffmpeg'); // Navega de /src/main/services para a raiz do projeto
+  : path.join(__dirname, '..', '..', '..', 'ffmpeg');
 
-// Define os nomes dos executáveis com base no SO
 const FFMPEG_BINARY = isWindows ? 'ffmpeg.exe' : 'ffmpeg';
 const FFPROBE_BINARY = isWindows ? 'ffprobe.exe' : 'ffprobe';
 
-// Monta o caminho completo para os executáveis
 const FFMPEG_CMD = path.join(ffmpegPath, FFMPEG_BINARY);
 const FFPROBE_CMD = path.join(ffmpegPath, FFPROBE_BINARY);
 
@@ -34,11 +29,10 @@ const FFPROBE_CMD = path.join(ffmpegPath, FFPROBE_BINARY);
  */
 function getVideoInfo(filePath) {
     return new Promise((resolve, reject) => {
-        // CORREÇÃO: Verifica se o caminho é um arquivo antes de executar o ffprobe.
         try {
             if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
                 console.warn(`[FfmpegService] Tentativa de analisar um caminho que não é um arquivo: ${filePath}`);
-                resolve(null); // Retorna null se não for um arquivo, evitando o erro.
+                resolve(null);
                 return;
             }
         } catch (e) {
@@ -60,7 +54,6 @@ function getVideoInfo(filePath) {
         });
 
         ffprobe.stderr.on('data', (data) => {
-            // Log de erros do ffprobe para depuração
             console.error(`FFprobe stderr: ${data}`);
         });
 
@@ -70,7 +63,7 @@ function getVideoInfo(filePath) {
                     const info = JSON.parse(jsonData);
                     const stream = info.streams.find(s => s.codec_type === 'video');
                     if (!stream) {
-                        resolve(null); // Não é um arquivo de vídeo válido
+                        resolve(null);
                         return;
                     }
                     const duration = info.format && info.format.duration ? parseFloat(info.format.duration) : 10.0;
@@ -95,15 +88,15 @@ function getVideoInfo(filePath) {
  * @param {string} options.inputPath - Caminho do vídeo de origem.
  * @param {string} options.outputPath - Caminho onde o vídeo final será salvo.
  * @param {object} options.preset - O objeto de preset com as configurações.
+ * @param {object} options.encoderSettings - As configurações de codificação.
  * @param {function} options.onProgress - Callback para reportar o progresso (0-100).
  * @returns {Promise<void>}
  */
-function renderVideo({ inputPath, outputPath, preset, onProgress }) {
+function renderVideo({ inputPath, outputPath, preset, encoderSettings, onProgress }) {
     return new Promise((resolve, reject) => {
         const { width, height, duration, applyBar, letterbox, barSize } = preset;
-        const sourceDuration = preset.sourceDuration; // Duração original, adicionada pelo QueueService
+        const sourceDuration = preset.sourceDuration;
 
-        // Constrói o filtro de vídeo (vf) do ffmpeg
         let timeFilter = '';
         if (sourceDuration && duration && Math.abs(sourceDuration - duration) > 0.5) {
             const ptsMultiplier = duration / sourceDuration;
@@ -121,25 +114,22 @@ function renderVideo({ inputPath, outputPath, preset, onProgress }) {
             filter = `scale=${width}:${height},setsar=1${timeFilter}`;
         }
 
-        // Argumentos para o comando ffmpeg
         const args = [
             '-i', inputPath,
             '-vf', filter,
             '-t', duration,
             '-c:v', 'libx264',
-            '-preset', 'fast',
-            '-crf', '25',
-            '-an', // Remove o áudio
-            '-y', // Sobrescreve o arquivo de saída se existir
+            '-preset', encoderSettings.encoderPreset || 'fast',
+            '-crf', (encoderSettings.qualityFactor || 25).toString(),
+            '-an',
+            '-y',
             outputPath
         ];
 
         const ffmpeg = spawn(FFMPEG_CMD, args);
 
-        // Escuta o stderr para capturar o progresso
         ffmpeg.stderr.on('data', (data) => {
             const output = data.toString();
-            // Regex para encontrar o tempo de progresso na saída do ffmpeg
             const timeMatch = output.match(/time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})/);
             if (timeMatch) {
                 const hours = parseInt(timeMatch[1], 10);
@@ -153,7 +143,7 @@ function renderVideo({ inputPath, outputPath, preset, onProgress }) {
 
         ffmpeg.on('close', (code) => {
             if (code === 0) {
-                onProgress(100); // Garante que o progresso chegue a 100%
+                onProgress(100);
                 resolve();
             } else {
                 reject(new Error(`ffmpeg encerrou com código de erro ${code}`));
