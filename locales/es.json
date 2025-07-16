@@ -70,5 +70,12 @@
   "presetMedium": "Medio (Predeterminado)",
   "presetSlow": "Lento",
   "presetSlower": "Más Lento",
-  "presetVeryslow": "Muy Lento"
+  "presetVeryslow": "Muy Lento",
+  "tabConverter": "Convertidor",
+  "tabSuperLed": "Creador SUPERLED",
+  "superLedPanelLeft": "Panel Izquierdo (768x1152)",
+  "superLedPanelCenter": "Panel Central (2112x1152)",
+  "superLedPanelRight": "Panel Derecho (768x1152)",
+  "superLedDropMessage": "Arrastra de 1 a 3 vídeos aquí",
+  "superLedCreate": "Crear SUPERLED"
 }

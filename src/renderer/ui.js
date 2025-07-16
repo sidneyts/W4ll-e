@@ -3,7 +3,7 @@ import * as dom from './dom.js';
 import * as state from './state.js';
 import { createSafeIdForPath } from './utils.js';
 
-// --- Funções de Atualização da UI ---
+// --- Funções de Atualização da UI do Conversor ---
 
 export function updateButtonsState() {
     const hasItems = state.videoQueue.length > 0;
@@ -16,8 +16,7 @@ export function updateButtonsState() {
         dom.logBtn.style.display = 'none';
         dom.pauseBtn.style.display = 'inline-flex';
         dom.cancelBtn.style.display = 'inline-flex';
-        dom.pauseBtn.textContent = state.translations.pause || 'Pause';
-        if(state.isPaused) dom.pauseBtn.textContent = state.translations.resume || 'Resume';
+        dom.pauseBtn.textContent = state.isPaused ? (state.translations.resume || 'Resume') : (state.translations.pause || 'Pause');
         dom.managePresetsBtn.disabled = true;
     } else {
         dom.startBtn.style.display = hasPendingItems && hasSelectedPresets ? 'inline-flex' : 'none';
@@ -34,7 +33,7 @@ export function updateQueueUI() {
     
     if (state.videoQueue.length === 0) {
         const p = document.createElement('p');
-        p.textContent = state.translations.emptyQueue || 'Empty queue';
+        p.textContent = state.translations.emptyQueue || 'Fila vazia';
         p.className = 'text-center text-slate-400 p-4';
         dom.queueList.appendChild(p);
     } else {
@@ -47,34 +46,26 @@ export function updateQueueUI() {
             const fileName = video.path.split(/[\\/]/).pop();
             
             let statusIcon = '';
-            let tooltipText = '';
             let detailsText = '';
 
             if (video.status === 'completed') {
-                statusIcon = `<div class="queue-btn" title="${state.translations.statusCompleted || 'Completed'}"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-green-400"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>`;
+                statusIcon = `<div class="queue-btn" title="${state.translations.statusCompleted}"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-green-400"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>`;
             } else if (video.status === 'error') {
-                statusIcon = `<button class="queue-btn" data-action="show-log" title="${state.translations.statusError || 'Error. Click to see log.'}"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-red-400"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg></button>`;
+                statusIcon = `<button class="queue-btn" data-action="show-log" title="${state.translations.statusError}"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-red-400"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg></button>`;
             } else if (video.status === 'error-loading') {
-                statusIcon = `<div class="queue-btn" title="${state.translations.errorLoadingTooltip || 'Failed to read file'}"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-yellow-400"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg></div>`;
+                statusIcon = `<div class="queue-btn" title="${state.translations.errorLoadingTooltip}"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-yellow-400"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg></div>`;
             } else {
-                statusIcon = `<button class="queue-btn" data-action="delete" title="${state.translations.deleteFromQueue || 'Delete from queue'}" ${state.isProcessing ? 'disabled' : ''}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>`;
+                statusIcon = `<button class="queue-btn" data-action="delete" title="${state.translations.deleteFromQueue}" ${state.isProcessing ? 'disabled' : ''}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>`;
             }
 
             if (video.info) {
-                const resText = `${video.info.width}x${video.info.height}`;
-                const durText = `${video.info.duration.toFixed(1)}s`;
-                detailsText = `<span class="video-detail">${resText}</span> <span class="video-detail">${durText}</span>`;
-                tooltipText = `${state.translations.resolution || 'Resolution'}: ${video.info.width}x${video.info.height} | ${state.translations.duration || 'Duration'}: ${video.info.duration.toFixed(2)}s`;
-            } else if (video.status === 'error-loading') {
-                detailsText = `<span class="video-detail text-yellow-400/80">${state.translations.errorReadingFile || 'Error reading file'}</span>`;
-                tooltipText = state.translations.errorLoadingTooltip || 'Failed to read file. It may be corrupt.';
+                detailsText = `<span class="video-detail">${video.info.width}x${video.info.height}</span> <span class="video-detail">${video.info.duration.toFixed(1)}s</span>`;
             } else {
-                detailsText = `<span class="video-detail">${state.translations.readingInfo || 'Reading info...'}</span>`;
-                tooltipText = state.translations.readingInfo || 'Reading info...';
+                detailsText = `<span class="video-detail">${state.translations.readingInfo}</span>`;
             }
 
             videoItem.innerHTML = `
-                <div class="video-info" title="${tooltipText}">
+                <div class="video-info">
                     <div class="file-name">${fileName}</div>
                     <div class="video-details-container">${detailsText}</div>
                     <progress id="progress-${createSafeIdForPath(video.path)}" value="${video.progress || 0}" max="100"></progress>
@@ -82,10 +73,6 @@ export function updateQueueUI() {
                 <div class="queue-controls">${statusIcon}</div>
             `;
             dom.queueList.appendChild(videoItem);
-
-            if (video.status === 'error' || video.status === 'error-loading') {
-                videoItem.querySelector('progress').classList.add('error');
-            }
         });
     }
     updateButtonsState();
@@ -97,10 +84,9 @@ export async function updatePresetAvailability() {
     if (state.videoQueue.length === 0) {
         checkboxes.forEach(checkbox => {
             const label = checkbox.parentElement;
-            checkbox.disabled = false;
-            checkbox.checked = false;
-            label.classList.remove('disabled', 'checked');
-            label.title = '';
+            checkbox.disabled = true;
+            label.classList.add('disabled');
+            label.title = state.translations.emptyQueue || 'Fila vazia';
         });
         updateButtonsState();
         return;
@@ -112,7 +98,7 @@ export async function updatePresetAvailability() {
 
         let isCompatible = false;
         for (const video of state.videoQueue) {
-            if (video.info) {
+            if (video.info && video.status !== 'error-loading') {
                 if (await window.electronAPI.isPresetCompatible(video.info, preset)) {
                     isCompatible = true;
                     break; 
@@ -127,20 +113,25 @@ export async function updatePresetAvailability() {
             checkbox.checked = false;
             label.classList.add('disabled');
             label.classList.remove('checked');
-            label.title = state.translations.presetIncompatible || 'Incompatible with any video in the queue.';
+            label.title = state.translations.presetIncompatible || 'Incompatível';
         } else {
             label.classList.remove('disabled');
             label.title = '';
+            // CORREÇÃO: Seleciona automaticamente se não estiver processando
             if (!state.isProcessing) {
                 checkbox.checked = true;
-                label.classList.add('checked');
             }
+            label.classList.toggle('checked', checkbox.checked);
         }
     }
     updateButtonsState();
 }
 
+/**
+ * Renderiza os checkboxes de presets na sidebar.
+ */
 export function renderPresetCheckboxes() {
+    const checkedIds = new Set(Array.from(dom.presetsCheckboxList.querySelectorAll('input:checked')).map(cb => cb.value));
     dom.presetsCheckboxList.innerHTML = '';
     state.presets.forEach(preset => {
         const label = document.createElement('label');
@@ -153,6 +144,10 @@ export function renderPresetCheckboxes() {
         checkbox.type = 'checkbox';
         checkbox.id = `preset-check-${preset.id}`;
         checkbox.value = preset.id;
+        if (checkedIds.has(preset.id)) {
+            checkbox.checked = true;
+            label.classList.add('checked');
+        }
         
         const span = document.createElement('span');
         span.textContent = preset.name;
@@ -167,8 +162,16 @@ export function renderPresetCheckboxes() {
         
         dom.presetsCheckboxList.appendChild(label);
     });
+    updatePresetAvailability();
 }
 
+
+// --- Funções de UI de Presets (Modal) ---
+
+/**
+ * Preenche o formulário do modal de presets com os dados de um preset selecionado.
+ * @param {object} preset - O objeto do preset a ser editado.
+ */
 export function populateFormWithPreset(preset) {
     if (!preset) {
         resetPresetForm();
@@ -181,19 +184,23 @@ export function populateFormWithPreset(preset) {
     dom.presetForm.querySelector('#preset-name').value = preset.name;
     dom.presetForm.querySelector('#preset-width').value = preset.width;
     dom.presetForm.querySelector('#preset-height').value = preset.height;
-    dom.presetDurationInput.value = preset.duration;
-    dom.applyBarCheckbox.checked = preset.applyBar || false;
-    dom.letterboxCheckbox.checked = preset.letterbox || false;
-    dom.barSizeContainer.style.display = preset.applyBar ? 'block' : 'none';
+    dom.presetForm.querySelector('#preset-duration').value = preset.duration;
+    dom.presetForm.querySelector('#preset-applyBar').checked = preset.applyBar || false;
+    dom.presetForm.querySelector('#preset-letterbox').checked = preset.letterbox || false;
     dom.presetForm.querySelector('#preset-barSize').value = preset.barSize || 0;
-    dom.ratioToleranceInput.value = (preset.ratioTolerance || 0.2) * 100;
-    dom.useOriginalDurationCheckbox.checked = preset.useOriginalDuration || false;
-    dom.presetDurationInput.disabled = dom.useOriginalDurationCheckbox.checked;
+    dom.presetForm.querySelector('#preset-ratioTolerance').value = (preset.ratioTolerance || 0.2) * 100;
+    dom.presetForm.querySelector('#preset-useOriginalDuration').checked = preset.useOriginalDuration || false;
+    
+    dom.presetForm.querySelector('#preset-duration').disabled = preset.useOriginalDuration;
+    dom.barSizeContainer.style.display = preset.applyBar ? 'block' : 'none';
     
     dom.deletePresetBtn.style.display = 'inline-flex';
     renderSavedPresetsList();
 }
 
+/**
+ * Renderiza a lista de presets salvos no modal de gerenciamento.
+ */
 export function renderSavedPresetsList() {
     dom.savedPresetsList.innerHTML = '';
     state.presets.forEach(preset => {
@@ -213,14 +220,16 @@ export function renderSavedPresetsList() {
         }
 
         item.addEventListener('click', () => {
-            const presetToEdit = state.presets.find(p => p.id === preset.id);
-            if (presetToEdit) populateFormWithPreset(presetToEdit);
+            populateFormWithPreset(preset);
         });
 
         dom.savedPresetsList.appendChild(item);
     });
 }
 
+/**
+ * Limpa e esconde o formulário do modal de presets.
+ */
 export function resetPresetForm() {
     state.setActivePresetId(null);
     dom.presetFormContainer.classList.add('opacity-0');
@@ -229,12 +238,51 @@ export function resetPresetForm() {
         if (!state.activePresetId) {
             dom.presetForm.reset();
         }
-    }, 200); // Atraso para resetar o formulário após o fade-out
+    }, 200);
     renderSavedPresetsList();
 }
 
-// --- Funções para Modais Customizados ---
 
+// --- Funções de Modais ---
+
+/**
+ * Exibe o modal com o log de processamento.
+ */
+export function showLogModal() {
+    dom.logOutput.textContent = state.finalLogContent;
+    dom.logModal.style.display = 'flex';
+}
+
+/**
+ * Exibe o modal de gerenciamento de presets.
+ */
+export function showPresetsModal() {
+    renderSavedPresetsList();
+    resetPresetForm();
+    dom.presetsModal.style.display = 'flex';
+}
+
+/**
+ * Exibe o modal de configurações.
+ */
+export async function showSettingsModal() {
+    const lang = await window.electronAPI.getSetting('language') || 'pt';
+    const preset = await window.electronAPI.getSetting('encoderPreset') || 'fast';
+    const crf = await window.electronAPI.getSetting('qualityFactor') || 25;
+    
+    dom.languageSelect.value = lang;
+    dom.encoderPresetSelect.value = preset;
+    dom.qualityFactorSlider.value = crf;
+    dom.qualityFactorValue.textContent = crf;
+    
+    dom.settingsModal.style.display = 'flex';
+}
+
+/**
+ * Exibe um modal de alerta genérico.
+ * @param {string} titleKey - Chave de tradução para o título.
+ * @param {string} messageKey - Chave de tradução para a mensagem.
+ */
 export function showAlert(titleKey, messageKey) {
     dom.genericModalTitle.textContent = state.translations[titleKey] || titleKey;
     dom.genericModalMessage.textContent = state.translations[messageKey] || messageKey;
@@ -243,13 +291,21 @@ export function showAlert(titleKey, messageKey) {
     dom.genericModalCancelBtn.style.display = 'none';
     dom.genericModal.style.display = 'flex';
 
-    const okListener = () => {
-        dom.genericModal.style.display = 'none';
-        dom.genericModalConfirmBtn.removeEventListener('click', okListener);
-    };
-    dom.genericModalConfirmBtn.addEventListener('click', okListener);
+    return new Promise((resolve) => {
+        const okListener = () => {
+            dom.genericModal.style.display = 'none';
+            dom.genericModalConfirmBtn.removeEventListener('click', okListener);
+            resolve(true);
+        };
+        dom.genericModalConfirmBtn.addEventListener('click', okListener);
+    });
 }
 
+/**
+ * Exibe um modal de confirmação genérico.
+ * @param {object} options - Opções para o modal.
+ * @returns {Promise<boolean>} - Resolve como true se confirmado, false se cancelado.
+ */
 export function showConfirm(options) {
     const { titleKey, messageKey, confirmKey, cancelKey, actionId } = options;
 
@@ -280,4 +336,51 @@ export function showConfirm(options) {
         dom.genericModalConfirmBtn.addEventListener('click', confirmListener);
         dom.genericModalCancelBtn.addEventListener('click', cancelListener);
     });
+}
+
+// --- Funções de Ação ---
+
+/**
+ * Inicia o processamento da fila do conversor.
+ */
+export function startQueue() {
+    const selectedPresetIds = Array.from(dom.presetsCheckboxList.querySelectorAll('input:checked')).map(input => input.value);
+    const selectedPresets = state.presets.filter(p => selectedPresetIds.includes(p.id));
+    const pendingVideos = state.videoQueue.filter(v => ['pending', 'error', 'cancelled', 'error-loading'].includes(v.status));
+
+    if (pendingVideos.length > 0 && selectedPresets.length > 0) {
+        state.setIsProcessing(true);
+        state.setIsPaused(false);
+        state.setFinalLogContent('');
+        updateQueueUI();
+        window.electronAPI.startQueue({ videos: pendingVideos, clientName: dom.clientNameInput.value, selectedPresets });
+    }
+}
+
+/**
+ * Pausa ou retoma o processamento da fila.
+ */
+export function togglePause() {
+    state.setIsPaused(!state.isPaused);
+    state.isPaused ? window.electronAPI.pauseQueue() : window.electronAPI.resumeQueue();
+    updateButtonsState();
+}
+
+/**
+ * Lida com cliques nos botões de um item da fila (excluir, ver log).
+ * @param {Event} event - O evento de clique.
+ */
+export function handleQueueItemClick(event) {
+    const button = event.target.closest('.queue-btn');
+    if (!button || button.disabled) return;
+    const action = button.dataset.action;
+    const videoItem = button.closest('.video-item');
+    const filePath = videoItem.dataset.path;
+
+    if (action === 'delete') {
+        state.setVideoQueue(state.videoQueue.filter(v => v.path !== filePath));
+        updateQueueUI();
+    } else if (action === 'show-log') {
+        showLogModal();
+    }
 }

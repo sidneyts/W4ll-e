@@ -1,6 +1,6 @@
 {
   "name": "w4ll-e-renderer",
-  "version": "2.3.0",
+  "version": "2.3.2",
   "description": "Aplicativo de desktop para automatizar a renderização e renomeação de vídeos.",
   "homepage": "https://github.com/sidneyts/W4ll-e",
   "main": "src/main/main.js",

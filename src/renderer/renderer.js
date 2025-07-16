@@ -1,13 +1,11 @@
 // src/renderer/renderer.js
-
-// Importa os módulos e suas funções de inicialização
 import * as state from './state.js';
 import * as ui from './ui.js';
 import { initEventListeners } from './events.js';
 import { initIpcHandlers } from './ipc.js';
 
 /**
- * Aplica as traduções na interface.
+ * Aplica as traduções em todos os elementos da UI marcados com atributos i18n.
  */
 async function applyTranslations() {
     const translations = await window.electronAPI.getTranslations();
@@ -30,7 +28,7 @@ async function applyTranslations() {
 }
 
 /**
- * Carrega os presets e atualiza a UI.
+ * Carrega os presets do backend e inicializa a UI correspondente.
  */
 async function initializePresets() {
     const loadedPresets = await window.electronAPI.loadPresets();
@@ -40,18 +38,29 @@ async function initializePresets() {
 }
 
 /**
- * Função principal de inicialização do renderer.
+ * Função principal de inicialização do processo de renderização (frontend).
  */
 async function main() {
-    // Define a plataforma no corpo do documento para estilização específica
+    // Adiciona uma classe ao corpo do documento para estilização específica da plataforma (macOS/Windows)
     document.body.classList.add(`platform-${window.electronAPI.getPlatform()}`);
     
+    // A ordem de inicialização é crucial para evitar erros de referência:
+    
+    // 1. Carrega as traduções para que a UI inicial seja exibida no idioma correto.
     await applyTranslations();
-    initEventListeners();
+    
+    // 2. Prepara os handlers de IPC para que o frontend possa receber eventos do backend a qualquer momento.
     initIpcHandlers();
-    ui.updateQueueUI();
+    
+    // 3. Ativa todos os event listeners para que a UI seja interativa.
+    initEventListeners();
+    
+    // 4. Renderiza o estado inicial da UI (fila vazia, botões corretos).
+    ui.updateQueueUI(); 
+    
+    // 5. Carrega os presets e os exibe na UI.
     await initializePresets();
 }
 
-// Inicia a aplicação quando o DOM estiver pronto.
+// Inicia a aplicação quando o DOM estiver completamente carregado.
 window.addEventListener('DOMContentLoaded', main);

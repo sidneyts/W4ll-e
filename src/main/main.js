@@ -7,12 +7,12 @@ const Store = require('electron-store');
 const { i18next, initI18n } = require('./i18n');
 const QueueService = require('./services/QueueService');
 const FfmpegService = require('./services/FfmpegService');
-const { isPresetCompatible } = require('../shared/compatibility'); // Importa a lógica compartilhada
+const SuperLedService = require('./services/SuperLedService'); // NOVO
+const { isPresetCompatible } = require('../shared/compatibility');
 
 app.commandLine.appendSwitch('remote-debugging-port', '9222');
 
 const store = new Store({
-    // Define valores padrão para as novas configurações
     defaults: {
         language: 'pt',
         encoderPreset: 'fast',
@@ -27,8 +27,8 @@ autoUpdater.logger.transports.file.level = "info";
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 680,
-        height: 720, // Aumentei a altura para acomodar as novas configurações
+        width: 1024, // Aumenta a largura para a nova interface de abas
+        height: 768,
         frame: false,
         transparent: true,
         resizable: true,
@@ -101,25 +101,35 @@ async function expandPathsToFiles(paths) {
     return allFiles;
 }
 
-ipcMain.on('open-file-dialog', (event) => {
+ipcMain.on('open-file-dialog', (event, options) => {
+    const { forPanel } = options || {};
     dialog.showOpenDialog(mainWindow, {
         properties: ['openFile', 'openDirectory', 'multiSelections'],
         filters: [{ name: 'Vídeos e Imagens', extensions: ['mp4', '.mov', '.mkv', '.avi', '.webm', '.jpg', '.jpeg', '.png'] }]
     }).then(async result => {
         if (!result.canceled && result.filePaths.length > 0) {
             const expandedFiles = await expandPathsToFiles(result.filePaths);
-            mainWindow.webContents.send('files-selected', expandedFiles);
+            // Envia os arquivos para o handler correto
+            if (forPanel) {
+                mainWindow.webContents.send('files-selected-superled', { files: expandedFiles, panel: forPanel });
+            } else {
+                mainWindow.webContents.send('files-selected', expandedFiles);
+            }
         }
     });
 });
 
-ipcMain.on('paths-dropped', async (event, paths) => {
+ipcMain.on('paths-dropped', async (event, { paths, panel }) => {
     const expandedFiles = await expandPathsToFiles(paths);
-    mainWindow.webContents.send('files-selected', expandedFiles);
+    if (panel) {
+        mainWindow.webContents.send('files-selected-superled', { files: expandedFiles, panel: panel });
+    } else {
+        mainWindow.webContents.send('files-selected', expandedFiles);
+    }
 });
 
+// --- Handlers de Processamento ---
 ipcMain.on('start-processing', (event, data) => {
-    // Busca as configurações de codificação antes de iniciar a fila
     const encoderSettings = {
         encoderPreset: store.get('encoderPreset'),
         qualityFactor: store.get('qualityFactor')
@@ -129,6 +139,12 @@ ipcMain.on('start-processing', (event, data) => {
 ipcMain.on('queue-pause', () => QueueService.pause());
 ipcMain.on('queue-resume', () => QueueService.resume());
 ipcMain.on('queue-cancel', () => QueueService.cancel());
+
+// NOVO: Handler para o SUPERLED
+ipcMain.on('superled:start', (event, data) => {
+    SuperLedService.createSuperLed(data, mainWindow);
+});
+
 
 // --- Gerenciamento de Presets ---
 const userPresetsPath = path.join(app.getPath('userData'), 'presets.json');
@@ -225,7 +241,6 @@ ipcMain.handle('set-setting', (event, { key, value }) => {
     store.set(key, value);
     if (key === 'language') {
         i18next.changeLanguage(value).then(() => {
-            // Recarrega a UI para aplicar o novo idioma em todos os lugares
             mainWindow.webContents.reload();
         });
     }

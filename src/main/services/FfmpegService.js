@@ -23,6 +23,52 @@ const FFPROBE_CMD = path.join(ffmpegPath, FFPROBE_BINARY);
 // --- Funções do Serviço ---
 
 /**
+ * Executa um comando FFmpeg genérico e reporta o progresso.
+ * @param {Array<string>} args - Array de argumentos para o comando FFmpeg.
+ * @param {function} [onProgress] - Callback opcional para progresso (0-100).
+ * @param {number} [totalDuration=30] - Duração total para cálculo do progresso.
+ * @returns {Promise<void>}
+ */
+function runFfmpegCommand(args, onProgress, totalDuration = 30) {
+    return new Promise((resolve, reject) => {
+        const ffmpeg = spawn(FFMPEG_CMD, args);
+        let errorOutput = '';
+
+        ffmpeg.stderr.on('data', (data) => {
+            const output = data.toString();
+            errorOutput += output; // Acumula a saída de erro
+
+            if (onProgress) {
+                const timeMatch = output.match(/time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})/);
+                if (timeMatch) {
+                    const hours = parseInt(timeMatch[1], 10);
+                    const minutes = parseInt(timeMatch[2], 10);
+                    const seconds = parseInt(timeMatch[3], 10);
+                    const currentTime = (hours * 3600) + (minutes * 60) + seconds;
+                    const progress = Math.min(100, Math.floor((currentTime / totalDuration) * 100));
+                    onProgress(progress);
+                }
+            }
+        });
+
+        ffmpeg.on('close', (code) => {
+            if (code === 0) {
+                if (onProgress) onProgress(100);
+                resolve();
+            } else {
+                // Rejeita a promessa com o log de erro completo do FFmpeg
+                reject(new Error(`FFmpeg encerrou com código ${code}. Log:\n${errorOutput}`));
+            }
+        });
+
+        ffmpeg.on('error', (err) => {
+            reject(err);
+        });
+    });
+}
+
+
+/**
  * Obtém informações de um arquivo de vídeo (dimensões, duração).
  * @param {string} filePath - Caminho para o arquivo de vídeo.
  * @returns {Promise<object|null>} Um objeto com as informações ou null em caso de erro.
@@ -93,70 +139,43 @@ function getVideoInfo(filePath) {
  * @returns {Promise<void>}
  */
 function renderVideo({ inputPath, outputPath, preset, encoderSettings, onProgress }) {
-    return new Promise((resolve, reject) => {
-        const { width, height, duration, applyBar, letterbox, barSize } = preset;
-        const sourceDuration = preset.sourceDuration;
+    const { width, height, duration, applyBar, letterbox, barSize } = preset;
+    const sourceDuration = preset.sourceDuration;
 
-        let timeFilter = '';
-        if (sourceDuration && duration && Math.abs(sourceDuration - duration) > 0.5) {
-            const ptsMultiplier = duration / sourceDuration;
-            timeFilter = `,setpts=${ptsMultiplier.toFixed(4)}*PTS`;
-        }
+    let timeFilter = '';
+    if (sourceDuration && duration && Math.abs(sourceDuration - duration) > 0.5) {
+        const ptsMultiplier = duration / sourceDuration;
+        timeFilter = `,setpts=${ptsMultiplier.toFixed(4)}*PTS`;
+    }
 
-        let filter;
-        if (letterbox) {
-            filter = `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1${timeFilter}`;
-        } else if (applyBar) {
-            const effectiveBarSize = barSize || 0;
-            const contentHeight = height - effectiveBarSize;
-            filter = `scale=${width}:${contentHeight},pad=${width}:${height}:0:0:color=black,setsar=1${timeFilter}`;
-        } else {
-            filter = `scale=${width}:${height},setsar=1${timeFilter}`;
-        }
+    let filter;
+    if (letterbox) {
+        filter = `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1${timeFilter}`;
+    } else if (applyBar) {
+        const effectiveBarSize = barSize || 0;
+        const contentHeight = height - effectiveBarSize;
+        filter = `scale=${width}:${contentHeight},pad=${width}:${height}:0:0:color=black,setsar=1${timeFilter}`;
+    } else {
+        filter = `scale=${width}:${height},setsar=1${timeFilter}`;
+    }
 
-        const args = [
-            '-i', inputPath,
-            '-vf', filter,
-            '-t', duration,
-            '-c:v', 'libx264',
-            '-preset', encoderSettings.encoderPreset || 'fast',
-            '-crf', (encoderSettings.qualityFactor || 25).toString(),
-            '-an',
-            '-y',
-            outputPath
-        ];
-
-        const ffmpeg = spawn(FFMPEG_CMD, args);
-
-        ffmpeg.stderr.on('data', (data) => {
-            const output = data.toString();
-            const timeMatch = output.match(/time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})/);
-            if (timeMatch) {
-                const hours = parseInt(timeMatch[1], 10);
-                const minutes = parseInt(timeMatch[2], 10);
-                const seconds = parseInt(timeMatch[3], 10);
-                const currentTime = (hours * 3600) + (minutes * 60) + seconds;
-                const progress = Math.min(100, Math.floor((currentTime / duration) * 100));
-                onProgress(progress);
-            }
-        });
-
-        ffmpeg.on('close', (code) => {
-            if (code === 0) {
-                onProgress(100);
-                resolve();
-            } else {
-                reject(new Error(`ffmpeg encerrou com código de erro ${code}`));
-            }
-        });
-
-        ffmpeg.on('error', (err) => {
-            reject(err);
-        });
-    });
+    const args = [
+        '-i', inputPath,
+        '-vf', filter,
+        '-t', duration,
+        '-c:v', 'libx264',
+        '-preset', encoderSettings.encoderPreset || 'fast',
+        '-crf', (encoderSettings.qualityFactor || 25).toString(),
+        '-an',
+        '-y',
+        outputPath
+    ];
+    
+    return runFfmpegCommand(args, onProgress, duration);
 }
 
 module.exports = {
     getVideoInfo,
     renderVideo,
+    runFfmpegCommand, // Exporta a nova função genérica
 };

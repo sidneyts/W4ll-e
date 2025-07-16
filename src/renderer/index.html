@@ -32,15 +32,11 @@
         </div>
 
         <aside id="sidebar" class="sidebar flex-shrink-0 p-4 flex flex-col pt-12">
-            <button id="sidebar-toggle-btn" class="sidebar-btn" data-i18n-title="toggleMenu"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg></button>
+            <div id="sidebar-controls" class="flex flex-col gap-4">
+                <button id="sidebar-toggle-btn" class="sidebar-btn" data-i18n-title="toggleMenu"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg></button>
+            </div>
             
             <div class="sidebar-content flex flex-col h-full w-full">
-                <div id="drop-zone" class="w-full h-40 flex-shrink-0 border-2 border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center text-center p-4 cursor-pointer hover:bg-white/5 transition-all mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white/50 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                    <p class="text-white font-semibold text-sm" data-i18n-key="import">Importar</p>
-                    <p class="text-white/60 text-xs mt-1" data-i18n-key="importFormats">(vídeos, imagens ou pastas)</p>
-                </div>
-
                 <div class="presets-section flex-grow flex flex-col min-h-0">
                     <div class="presets-title-container flex justify-between items-center mb-2 flex-shrink-0">
                         <h3 class="text-md font-bold text-white/90" data-i18n-key="presets">Predefinições</h3>
@@ -55,18 +51,65 @@
 
         <div id="main-panel" class="flex-grow flex flex-col min-w-0 pt-10">
             <main class="w-full flex-grow p-6 pt-0 flex flex-col min-h-0">
-                <div class="mb-4 flex-shrink-0">
+                <div class="flex-shrink-0 mb-4 flex justify-between items-center gap-4">
+                    <div id="tabs-container" class="flex-shrink-0 flex items-center gap-2 p-1 bg-black/20 rounded-full">
+                        <button id="tab-converter" class="tab-btn active" data-i18n-key="tabConverter">Conversor</button>
+                        <button id="tab-superled" class="tab-btn" data-i18n-key="tabSuperLed">Criador SUPERLED</button>
+                    </div>
                     <input type="text" id="client-name" data-i18n-placeholder="clientNamePlaceholder" class="w-full bg-white/10 text-white p-3 rounded-full border-2 border-transparent focus:border-white/30 focus:outline-none transition-all">
                 </div>
-                <div class="flex-grow bg-black bg-opacity-20 rounded-2xl p-3 flex flex-col overflow-hidden">
-                    <div id="queue-list" class="flex-grow space-y-2 overflow-y-auto custom-scrollbar pr-2"></div>
-                </div>
-                <div id="action-buttons" class="flex items-center justify-center gap-4 flex-shrink-0 pt-6">
-                    <button id="clear-queue-btn" class="action-btn bg-white/10" style="display: none;" data-i18n-key="clearQueue">Limpar Fila</button>
-                    <button id="log-btn" class="action-btn bg-white/10" style="display: none;" data-i18n-key="viewLog">Ver Log</button>
-                    <button id="pause-btn" class="action-btn bg-gradient-to-r from-amber-500 to-orange-500" style="display: none;" data-i18n-key="pause">Pausar</button>
-                    <button id="cancel-btn" class="action-btn bg-gradient-to-r from-red-500 to-pink-600" style="display: none;" data-i18n-key="cancel">Cancelar</button>
-                    <button id="start-btn" class="action-btn main-action-btn" data-i18n-key="startQueue">Iniciar Fila</button>
+                
+                <div id="tab-content-container" class="flex-grow flex flex-col min-h-0">
+                    
+                    <div id="converter-view" class="flex flex-col flex-grow min-h-0">
+                        <div id="drop-zone" class="w-full h-40 flex-shrink-0 border-2 border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center text-center p-4 cursor-pointer hover:bg-white/5 transition-all mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white/50 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                            <p class="text-white font-semibold text-sm" data-i18n-key="import">Importar</p>
+                            <p class="text-white/60 text-xs mt-1" data-i18n-key="importFormats">(vídeos, imagens ou pastas)</p>
+                        </div>
+                        <div class="flex-grow bg-black bg-opacity-20 rounded-2xl p-3 flex flex-col overflow-hidden">
+                            <div id="queue-list" class="flex-grow space-y-2 overflow-y-auto custom-scrollbar pr-2"></div>
+                        </div>
+                        <div id="action-buttons" class="flex items-center justify-center gap-4 flex-shrink-0 pt-6">
+                            <button id="clear-queue-btn" class="action-btn bg-white/10" style="display: none;" data-i18n-key="clearQueue">Limpar Fila</button>
+                            <button id="log-btn" class="action-btn bg-white/10" style="display: none;" data-i18n-key="viewLog">Ver Log</button>
+                            <button id="pause-btn" class="action-btn bg-gradient-to-r from-amber-500 to-orange-500" style="display: none;" data-i18n-key="pause">Pausar</button>
+                            <button id="cancel-btn" class="action-btn bg-gradient-to-r from-red-500 to-pink-600" style="display: none;" data-i18n-key="cancel">Cancelar</button>
+                            <button id="start-btn" class="action-btn main-action-btn" data-i18n-key="startQueue">Iniciar Fila</button>
+                        </div>
+                    </div>
+
+                    <div id="superled-view" class="hidden flex-col flex-grow min-h-0">
+                        <div class="grid grid-cols-3 gap-4 flex-grow min-h-0">
+                            <div class="panel-container" data-panel="left">
+                                <h3 class="panel-title" data-i18n-key="superLedPanelLeft">Painel Esquerdo</h3>
+                                <div class="panel-drop-zone"><p data-i18n-key="superLedDropMessage">Arraste 1 a 3 vídeos</p></div>
+                                <div class="panel-queue-list custom-scrollbar"></div>
+                            </div>
+                            <div class="panel-container" data-panel="center">
+                                <h3 class="panel-title" data-i18n-key="superLedPanelCenter">Painel Central</h3>
+                                <div class="panel-drop-zone"><p data-i18n-key="superLedDropMessage">Arraste 1 a 3 vídeos</p></div>
+                                <div class="panel-queue-list custom-scrollbar"></div>
+                            </div>
+                            <div class="panel-container" data-panel="right">
+                                <h3 class="panel-title" data-i18n-key="superLedPanelRight">Painel Direito</h3>
+                                <div class="panel-drop-zone"><p data-i18n-key="superLedDropMessage">Arraste 1 a 3 vídeos</p></div>
+                                <div class="panel-queue-list custom-scrollbar"></div>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0 pt-4 space-y-3">
+                            <div id="superled-progress-container" class="w-full bg-black/20 rounded-full h-2.5" style="display: none;">
+                                <div id="superled-progress-bar" class="bg-purple-600 h-2.5 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <div id="superled-log-container" class="w-full h-20 bg-black/20 rounded-lg p-2" style="display: none;">
+                                <pre id="superled-log-output" class="text-xs text-slate-300 font-mono custom-scrollbar h-full overflow-y-auto"></pre>
+                            </div>
+                            <div id="superled-action-buttons" class="flex items-center justify-center gap-4 pt-2">
+                                <button id="start-superled-btn" class="action-btn main-action-btn" data-i18n-key="superLedCreate">Criar SUPERLED</button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </main>
         </div>
